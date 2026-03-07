@@ -3,144 +3,697 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Viewer - Agent Monitor</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <title>Logs | Agent Monitor</title>
+    <meta name="description" content="View detailed logs for all your agents">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
     <style>
+        /* ========================================
+           CSS CUSTOM PROPERTIES
+           ======================================== */
+        :root {
+            /* Colors */
+            --bg-primary: #0f0c29;
+            --bg-secondary: #302b63;
+            --bg-tertiary: #24243e;
+            --accent-blue: #00d4ff;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            
+            /* Text */
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            /* Glass */
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-hover: rgba(255, 255, 255, 0.12);
+            
+            /* Typography */
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            /* Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            
+            /* Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-full: 9999px;
+        }
+
+        /* ========================================
+           BASE STYLES
+           ======================================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
             min-height: 100vh;
-            color: #e0e0e0;
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Floating Orbs Background */
+        .bg-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--accent-purple);
+            top: -200px;
+            left: -200px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-blue);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: -7s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(-30px, -20px) scale(1.02); }
+        }
+
+        /* ========================================
+           ACCESSIBILITY
+           ======================================== */
+        :focus {
+            outline: none;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 3px;
+            border-radius: var(--radius-sm);
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-purple);
+            color: white;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-sm);
+            z-index: 10000;
+            font-weight: 600;
+            transition: top var(--transition-fast);
+        }
+
+        .skip-link:focus {
+            top: var(--space-md);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ========================================
+           NAVBAR
+           ======================================== */
         .navbar {
-            background: rgba(0, 0, 0, 0.3) !important;
-            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            padding: var(--space-md) 0;
+            transform: translateZ(0);
         }
-        .log-container {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            padding: 20px;
-            max-height: 70vh;
-            overflow-y: auto;
+
+        .navbar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .log-entry {
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 4px solid #666;
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: opacity var(--transition-fast);
         }
-        .log-entry.success {
-            border-left-color: #28a745;
-            background: rgba(40, 167, 69, 0.1);
+
+        .navbar-brand:hover {
+            opacity: 0.85;
         }
-        .log-entry.error {
-            border-left-color: #dc3545;
-            background: rgba(220, 53, 69, 0.1);
+
+        .navbar-brand i {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.75rem;
         }
-        .log-entry.warning {
-            border-left-color: #ffc107;
-            background: rgba(255, 193, 7, 0.1);
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-lg);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all var(--transition-normal);
+            min-height: 44px;
         }
-        .log-entry.info {
-            border-left-color: #0dcaf0;
-            background: rgba(13, 202, 240, 0.1);
+
+        .btn-back:hover {
+            background: var(--glass-hover);
+            border-color: var(--accent-purple);
         }
-        .log-timestamp {
-            color: #888;
-            margin-right: 10px;
+
+        /* ========================================
+           MAIN CONTENT
+           ======================================== */
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-2xl) var(--space-lg);
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-xl);
+            flex-wrap: wrap;
+            gap: var(--space-md);
+        }
+
+        .page-title {
+            font-family: var(--font-heading);
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        /* ========================================
+           FILTER BUTTONS
+           ======================================== */
+        .filter-bar {
+            display: flex;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-sm) var(--space-md);
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            min-height: 40px;
+        }
+
+        .filter-btn:hover {
+            background: var(--glass-hover);
+            color: var(--text-primary);
+            border-color: var(--accent-purple);
+        }
+
+        .filter-btn:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-color: transparent;
+            color: white;
+        }
+
+        .filter-btn i {
             font-size: 0.8rem;
         }
-        .log-message {
-            word-break: break-word;
+
+        /* ========================================
+           LOG CONTAINER
+           ======================================== */
+        .log-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            max-height: 70vh;
+            overflow-y: auto;
+            contain: content;
         }
-        .filter-buttons .btn {
-            margin-right: 5px;
+
+        .log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-container::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: var(--radius-full);
+        }
+
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-purple);
+        }
+
+        /* ========================================
+           LOG ENTRIES
+           ======================================== */
+        .log-entry {
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--glass-border);
+            transition: all var(--transition-fast);
+            animation: logFadeIn 0.3s ease-out backwards;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry:hover {
+            background: var(--glass-hover);
+        }
+
+        @keyframes logFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-entry.success {
+            border-left: 3px solid var(--success);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .log-entry.error {
+            border-left: 3px solid var(--error);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .log-entry.warning {
+            border-left: 3px solid var(--warning);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .log-entry.info {
+            border-left: 3px solid var(--info);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .log-timestamp {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--accent-blue);
+            margin-right: var(--space-md);
+            white-space: nowrap;
+        }
+
+        .log-message {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        /* ========================================
+           EMPTY & LOADING STATES
+           ======================================== */
+        .empty-state, .loading-state {
+            text-align: center;
+            padding: var(--space-2xl);
+        }
+
+        .empty-state i, .loading-state i {
+            font-size: 4rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+            opacity: 0.5;
+        }
+
+        .empty-state h3, .loading-state h3 {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--glass-border);
+            border-top-color: var(--accent-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--space-md);
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ========================================
+           ERROR STATES
+           ======================================== */
+        .error-banner {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-md);
+            padding: var(--space-md) var(--space-lg);
+            margin-bottom: var(--space-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            color: var(--error);
+        }
+
+        .error-banner button {
+            margin-left: auto;
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--error);
+        }
+
+        /* ========================================
+           RESPONSIVE
+           ======================================== */
+        @media (max-width: 767px) {
+            :root {
+                font-size: 15px;
+            }
+
+            main {
+                padding: var(--space-xl) var(--space-md);
+            }
+
+            .navbar-content {
+                flex-direction: column;
+                gap: var(--space-sm);
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions .btn-back {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .filter-bar {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: var(--space-sm);
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .filter-btn {
+                white-space: nowrap;
+            }
+
+            .log-timestamp {
+                display: block;
+                margin-bottom: var(--space-xs);
+            }
+        }
+
+        @supports (padding: max(0px)) {
+            .navbar {
+                padding-left: max(var(--space-md), env(safe-area-inset-left));
+                padding-right: max(var(--space-md), env(safe-area-inset-right));
+            }
+
+            main {
+                padding-left: max(var(--space-lg), env(safe-area-inset-left));
+                padding-right: max(var(--space-lg), env(safe-area-inset-right));
+                padding-bottom: max(var(--space-2xl), env(safe-area-inset-bottom));
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-robot me-2"></i>Agent Monitor
+    <!-- Skip Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Background Orbs -->
+    <div class="bg-orbs" aria-hidden="true">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="navbar-content">
+            <a href="/" class="navbar-brand" aria-label="Agent Monitor Home">
+                <i class="bi bi-robot"></i>
+                <span>Agent Monitor</span>
             </a>
-            <a href="/" class="btn btn-outline-light btn-sm">
-                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            <a href="/" class="btn-back" aria-label="Back to dashboard">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Dashboard</span>
             </a>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="row mb-4">
-            <div class="col">
-                <h2 class="mb-3">
-                    <i class="bi bi-journal-text me-2"></i>Log Viewer
-                </h2>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-outline-light" onclick="refreshLogs()">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    <!-- Main Content -->
+    <main id="main-content" role="main">
+        <header class="page-header">
+            <h1 class="page-title">Logs</h1>
+            <div class="header-actions">
+                <button class="btn-back" onclick="refreshLogs()" aria-label="Refresh logs">
+                    <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
+        </header>
+
+        <!-- Filter Buttons -->
+        <div class="filter-bar" role="group" aria-label="Filter logs by level">
+            <button class="filter-btn active" data-filter="all" onclick="filterLogs('all')" aria-pressed="true">
+                <i class="bi bi-collection"></i>
+                All
+            </button>
+            <button class="filter-btn" data-filter="success" onclick="filterLogs('success')" aria-pressed="false">
+                <i class="bi bi-check-circle"></i>
+                Success
+            </button>
+            <button class="filter-btn" data-filter="error" onclick="filterLogs('error')" aria-pressed="false">
+                <i class="bi bi-x-circle"></i>
+                Errors
+            </button>
+            <button class="filter-btn" data-filter="warning" onclick="filterLogs('warning')" aria-pressed="false">
+                <i class="bi bi-exclamation-triangle"></i>
+                Warnings
+            </button>
+            <button class="filter-btn" data-filter="info" onclick="filterLogs('info')" aria-pressed="false">
+                <i class="bi bi-info-circle"></i>
+                Info
+            </button>
         </div>
 
-        <div class="row mb-3 filter-buttons">
-            <div class="col">
-                <button class="btn btn-primary btn-sm" onclick="filterLogs('all')">
-                    <i class="bi bi-collection me-1"></i>All
-                </button>
-                <button class="btn btn-success btn-sm" onclick="filterLogs('success')">
-                    <i class="bi bi-check-circle me-1"></i>Success
-                </button>
-                <button class="btn btn-danger btn-sm" onclick="filterLogs('error')">
-                    <i class="bi bi-x-circle me-1"></i>Errors
-                </button>
-                <button class="btn btn-warning btn-sm" onclick="filterLogs('warning')">
-                    <i class="bi bi-exclamation-triangle me-1"></i>Warnings
-                </button>
+        <!-- Error Banner -->
+        <div id="error-banner" class="error-banner" style="display: none;" role="alert" aria-live="polite">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span id="error-message">Unable to load logs.</span>
+            <button class="btn-back" onclick="refreshLogs()" aria-label="Retry">
+                <i class="bi bi-arrow-clockwise"></i>
+                Retry
+            </button>
+        </div>
+
+        <!-- Log Container -->
+        <div id="log-container" class="log-container" role="log" aria-live="polite" aria-label="Log entries">
+            <div class="loading-state">
+                <div class="spinner" role="status" aria-label="Loading"></div>
+                <h3>Loading logs...</h3>
             </div>
         </div>
+    </main>
 
-        <div id="agent-filter" class="mb-3" style="display: none;">
-            <span class="badge bg-info">
-                <i class="bi bi-filter me-1"></i>Filtered by agent: <span id="agent-name"></span>
-            </span>
-        </div>
-
-        <div class="log-container" id="logs-container">
-            <div class="text-center">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        /* ========================================
+           STATE
+           ======================================== */
         let allLogs = [];
         let currentFilter = 'all';
-        let agentFilter = null;
+        let cachedLogs = null;
 
-        function getUrlParameter(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+        /* ========================================
+           FILTER FUNCTION
+           ======================================== */
+        function filterLogs(level) {
+            currentFilter = level;
+            
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const isActive = btn.dataset.filter === level;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-pressed', isActive);
+            });
+            
+            renderLogs();
         }
 
-        function createLogEntry(log) {
-            const timestamp = log.timestamp || '';
-            const message = log.message || '';
-            const level = log.level || 'info';
+        /* ========================================
+           RENDER LOGS
+           ======================================== */
+        function renderLogs() {
+            const container = document.getElementById('log-container');
             
-            return `
-                <div class="log-entry ${level}">
-                    <span class="log-timestamp">${timestamp}</span>
-                    <span class="log-message">${escapeHtml(message)}</span>
+            // Filter logs
+            let filteredLogs = allLogs;
+            if (currentFilter !== 'all') {
+                filteredLogs = allLogs.filter(log => log.level === currentFilter);
+            }
+
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h3>No ${currentFilter === 'all' ? '' : currentFilter + ' '}Logs Found</h3>
+                        <p>Log entries will appear here when agents run.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render log entries
+            container.innerHTML = filteredLogs.map((log, index) => `
+                <div class="log-entry ${log.level}" style="animation-delay: ${index * 30}ms" role="article" aria-label="Log entry: ${log.level}">
+                    <span class="log-timestamp">${escapeHtml(log.timestamp)}</span>
+                    <span class="log-message">${escapeHtml(log.message)}</span>
                 </div>
-            `;
+            `).join('');
         }
 
         function escapeHtml(text) {
@@ -149,66 +702,91 @@
             return div.innerHTML;
         }
 
-        function filterLogs(level) {
-            currentFilter = level;
-            renderLogs();
-        }
-
-        function renderLogs() {
-            const container = document.getElementById('logs-container');
-            let filteredLogs = allLogs;
-
-            // Apply level filter
-            if (currentFilter !== 'all') {
-                filteredLogs = filteredLogs.filter(log => log.level === currentFilter);
-            }
-
-            // Apply agent filter
-            if (agentFilter) {
-                filteredLogs = filteredLogs.filter(log => 
-                    log.message.toLowerCase().includes(agentFilter.toLowerCase())
-                );
-            }
-
-            if (filteredLogs.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-muted">
-                        <p>No log entries found.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = filteredLogs.map(createLogEntry).join('');
-        }
-
-        async function refreshLogs() {
+        /* ========================================
+           FETCH LOGS
+           ======================================== */
+        async function fetchLogs() {
             try {
                 const response = await fetch('/api/logs');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 const logs = await response.json();
+                
+                // Cache
+                cachedLogs = logs;
+                localStorage.setItem('cachedLogs', JSON.stringify(logs));
                 
                 allLogs = logs;
                 renderLogs();
+                
+                // Hide error
+                document.getElementById('error-banner').style.display = 'none';
+                
             } catch (error) {
-                console.error('Error fetching logs:', error);
-                document.getElementById('logs-container').innerHTML = `
-                    <div class="text-center text-danger">
-                        <p>Error loading logs. Please try again.</p>
-                    </div>
-                `;
+                console.error('Failed to fetch logs:', error);
+                
+                // Try cache
+                const cached = localStorage.getItem('cachedLogs');
+                if (cached) {
+                    try {
+                        allLogs = JSON.parse(cached);
+                        renderLogs();
+                    } catch (e) {
+                        showError();
+                    }
+                } else {
+                    showError();
+                }
             }
         }
 
-        // Check for agent filter in URL
-        const urlAgent = getUrlParameter('agent');
-        if (urlAgent) {
-            agentFilter = urlAgent;
-            document.getElementById('agent-filter').style.display = 'block';
-            document.getElementById('agent-name').textContent = urlAgent;
+        function showError() {
+            document.getElementById('error-banner').style.display = 'flex';
+            document.getElementById('log-container').innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <h3>Unable to Load Logs</h3>
+                    <p>Please check your connection and try again.</p>
+                </div>
+            `;
         }
 
-        // Initial load
-        refreshLogs();
+        function refreshLogs() {
+            fetchLogs();
+        }
+
+        /* ========================================
+           INITIALIZATION
+           ======================================== */
+        function init() {
+            // Try cache first
+            const cached = localStorage.getItem('cachedLogs');
+            if (cached) {
+                try {
+                    allLogs = JSON.parse(cached);
+                    renderLogs();
+                } catch (e) {}
+            }
+
+            // Fetch fresh
+            fetchLogs();
+
+            // Auto-refresh every 10 seconds
+            setInterval(fetchLogs, 10000);
+        }
+
+        // Check for URL filter param
+        const urlParams = new URLSearchParams(window.location.search);
+        const agentFilter = urlParams.get('agent');
+        
+        if (agentFilter) {
+            // Could filter by agent name here
+        }
+
+        init();
     </script>
 </body>
 </html>

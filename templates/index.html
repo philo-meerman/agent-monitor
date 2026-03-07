@@ -3,214 +3,1176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Monitor Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <title>Agent Monitor | Dashboard</title>
+    <meta name="description" content="Monitor your system and AI agents in one beautiful dashboard">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
     <style>
+        /* ========================================
+           CSS CUSTOM PROPERTIES
+           ======================================== */
+        :root {
+            /* Colors */
+            --bg-primary: #0f0c29;
+            --bg-secondary: #302b63;
+            --bg-tertiary: #24243e;
+            --accent-blue: #00d4ff;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            
+            /* Text */
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            
+            /* Glass */
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-hover: rgba(255, 255, 255, 0.12);
+            
+            /* Typography */
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            /* Spacing */
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            
+            /* Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-full: 9999px;
+        }
+
+        /* ========================================
+           BASE STYLES
+           ======================================== */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
         body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
             min-height: 100vh;
-            color: #e0e0e0;
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Floating Orbs Background */
+        .bg-orbs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--accent-purple);
+            top: -200px;
+            left: -200px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-blue);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: -7s;
+        }
+
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-cyan);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(-30px, -20px) scale(1.02); }
+        }
+
+        /* ========================================
+           ACCESSIBILITY - FOCUS STATES
+           ======================================== */
+        :focus {
+            outline: none;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 3px;
+            border-radius: var(--radius-sm);
+        }
+
+        /* Skip Link for Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-purple);
+            color: white;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-sm);
+            z-index: 10000;
+            font-weight: 600;
+            transition: top var(--transition-fast);
+        }
+
+        .skip-link:focus {
+            top: var(--space-md);
+        }
+
+        /* ========================================
+           REDUCED MOTION
+           ======================================== */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ========================================
+           NAVBAR
+           ======================================== */
         .navbar {
-            background: rgba(0, 0, 0, 0.3) !important;
-            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            padding: var(--space-md) 0;
+            transform: translateZ(0);
+            will-change: transform;
         }
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+        .navbar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: opacity var(--transition-fast);
         }
-        .status-success {
-            color: #28a745;
+
+        .navbar-brand:hover {
+            opacity: 0.85;
         }
-        .status-failure {
-            color: #dc3545;
+
+        .navbar-brand i {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.75rem;
         }
-        .status-running {
-            color: #0dcaf0;
+
+        .navbar-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-lg);
         }
-        .badge-success {
-            background-color: #28a745;
+
+        .navbar-clock {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
         }
-        .badge-failure {
-            background-color: #dc3545;
-        }
-        .badge-running {
-            background-color: #0dcaf0;
-        }
-        .agent-icon {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        .last-run {
-            font-size: 0.85rem;
-            color: #888;
-        }
-        .refresh-indicator {
+
+        .refresh-badge {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
             font-size: 0.8rem;
-            color: #666;
+            color: var(--text-muted);
+            background: var(--glass-bg);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-full);
+            border: 1px solid var(--glass-border);
         }
+
+        .refresh-badge i {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .refresh-badge i {
+                animation: none;
+            }
+        }
+
+        /* ========================================
+           MAIN CONTENT
+           ======================================== */
+        main {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-2xl) var(--space-lg);
+        }
+
+        /* Page Header */
+        .page-header {
+            text-align: center;
+            margin-bottom: var(--space-2xl);
+        }
+
+        .page-title {
+            font-family: var(--font-heading);
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: var(--space-sm);
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Section Titles */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md var(--space-2xl) );
+            margin:0 var(--space-lg);
+        }
+
         .section-title {
-            font-size: 1rem;
-            color: #888;
-            margin: 20px 0 10px 0;
+            font-family: var(--font-heading);
+            font-size: 0.85rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.15em;
+            color: var(--text-secondary);
         }
-        .external-link-icon {
+
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--glass-border), transparent);
+        }
+
+        /* ========================================
+           AGENT CARDS GRID
+           ======================================== */
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--space-lg);
+        }
+
+        /* ========================================
+           AGENT CARD
+           ======================================== */
+        .agent-card {
+            position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            transform: translateZ(0);
+            will-change: transform, box-shadow;
+            contain: content;
+            overflow: hidden;
+            animation: cardFadeIn 0.5s ease-out backwards;
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .agent-card:hover,
+        .agent-card:focus-visible {
+            background: var(--glass-hover);
+            transform: translateY(-8px) perspective(1000px) rotateX(2deg);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(139, 92, 246, 0.15);
+        }
+
+        .agent-card:hover::before,
+        .agent-card:focus-visible::before {
+            opacity: 1;
+        }
+
+        .agent-card:active {
+            transform: translateY(-4px) perspective(1000px) rotateX(1deg);
+        }
+
+        /* Card Glow Effect */
+        .agent-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+            pointer-events: none;
+        }
+
+        .agent-card:hover::after {
+            opacity: 1;
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Staggered Animation Delays */
+        .agent-card:nth-child(1) { animation-delay: 0ms; }
+        .agent-card:nth-child(2) { animation-delay: 100ms; }
+        .agent-card:nth-child(3) { animation-delay: 200ms; }
+        .agent-card:nth-child(4) { animation-delay: 300ms; }
+        .agent-card:nth-child(5) { animation-delay: 400ms; }
+        .agent-card:nth-child(6) { animation-delay: 500ms; }
+
+        /* Card Content */
+        .agent-card-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .agent-icon {
+            font-size: 3.5rem;
+            margin-bottom: var(--space-md);
+            filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.3));
+        }
+
+        .agent-name {
+            font-family: var(--font-heading);
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .external-icon {
             font-size: 0.75rem;
-            margin-left: 5px;
+            color: var(--text-muted);
+            transition: color var(--transition-fast);
+        }
+
+        .agent-card:hover .external-icon {
+            color: var(--accent-blue);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-md);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .status-badge i {
+            font-size: 0.65rem;
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .status-running {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .status-running {
+                animation: none;
+            }
+        }
+
+        /* Last Run */
+        .agent-last-run {
+            margin-top: var(--space-md);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .agent-last-run i {
+            color: var(--accent-blue);
+            opacity: 0.7;
+        }
+
+        /* ========================================
+           BUTTONS
+           ======================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-lg);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            text-decoration: none;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .btn:hover {
+            background: var(--glass-hover);
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border: none;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-md);
+            margin-top: var(--space-2xl);
+            flex-wrap: wrap;
+        }
+
+        /* ========================================
+           LOADING STATES - SKELETON
+           ======================================== */
+        .skeleton {
+            background: linear-gradient(90deg, 
+                var(--glass-bg) 25%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                var(--glass-bg) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-md);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-card {
+            height: 280px;
+        }
+
+        .skeleton-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto var(--space-md);
+        }
+
+        .skeleton-title {
+            width: 60%;
+            height: 24px;
+            margin: 0 auto var(--space-sm);
+        }
+
+        .skeleton-badge {
+            width: 80px;
+            height: 24px;
+            margin: 0 auto var(--space-md);
+        }
+
+        .skeleton-text {
+            width: 70%;
+            height: 16px;
+            margin: 0 auto;
+        }
+
+        /* ========================================
+           ERROR STATES
+           ======================================== */
+        .error-banner {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-md);
+            padding: var(--space-md) var(--space-lg);
+            margin-bottom: var(--space-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            color: var(--error);
+        }
+
+        .error-banner i {
+            font-size: 1.25rem;
+        }
+
+        .error-banner button {
+            margin-left: auto;
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: var(--error);
+        }
+
+        /* Offline Banner */
+        .offline-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--warning);
+            color: #000;
+            padding: var(--space-sm);
+            text-align: center;
+            font-weight: 600;
+            z-index: 10001;
+            display: none;
+        }
+
+        .offline-banner.visible {
+            display: block;
+        }
+
+        /* ========================================
+           EMPTY STATES
+           ======================================== */
+        .empty-state {
+            text-align: center;
+            padding: var(--space-2xl);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--text-muted);
+            margin-bottom: var(--space-md);
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+        }
+
+        /* ========================================
+           RESPONSIVE
+           ======================================== */
+        @media (max-width: 991px) {
+            .agents-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 767px) {
+            :root {
+                font-size: 15px;
+            }
+
+            main {
+                padding: var(--space-xl) var(--space-md);
+            }
+
+            .navbar-content {
+                flex-direction: column;
+                gap: var(--space-sm);
+            }
+
+            .navbar-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .agents-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .agent-card {
+                padding: var(--space-lg);
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+            }
+        }
+
+        /* Touch Device Optimizations */
+        @media (hover: none) {
+            .agent-card:hover {
+                transform: none;
+            }
+
+            .agent-card:active {
+                background: var(--glass-hover);
+            }
+        }
+
+        /* Safe Area for Notched Phones */
+        @supports (padding: max(0px)) {
+            .navbar {
+                padding-left: max(var(--space-md), env(safe-area-inset-left));
+                padding-right: max(var(--space-md), env(safe-area-inset-right));
+            }
+
+            main {
+                padding-left: max(var(--space-lg), env(safe-area-inset-left));
+                padding-right: max(var(--space-lg), env(safe-area-inset-right));
+                padding-bottom: max(var(--space-2xl), env(safe-area-inset-bottom));
+            }
+        }
+
+        /* ========================================
+           SCREEN READER ONLY
+           ======================================== */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-robot me-2"></i>Agent Monitor
+    <!-- Skip Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Offline Banner -->
+    <div id="offline-banner" class="offline-banner" role="alert" aria-live="polite">
+        <i class="bi bi-wifi-off"></i>
+        You're offline. Showing cached data.
+    </div>
+
+    <!-- Background Orbs -->
+    <div class="bg-orbs" aria-hidden="true">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="navbar-content">
+            <a href="/" class="navbar-brand" aria-label="Agent Monitor Home">
+                <i class="bi bi-robot"></i>
+                <span>Agent Monitor</span>
             </a>
-            <span class="refresh-indicator">
-                <i class="bi bi-arrow-clockwise me-1"></i>Auto-refresh: 10s
-            </span>
+            <div class="navbar-info">
+                <span class="navbar-clock" id="clock" aria-live="polite" aria-label="Current time"></span>
+                <span class="refresh-badge">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Auto-refresh: 10s</span>
+                </span>
+            </div>
         </div>
     </nav>
 
-    <div class="container">
-        <div class="row mb-4">
-            <div class="col">
-                <h2 class="mb-3">
-                    <i class="bi bi-grid-3x3-gap me-2"></i>Agent Status
-                </h2>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-outline-light" onclick="refreshAgents()">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh Now
-                </button>
+    <!-- Main Content -->
+    <main id="main-content" role="main">
+        <header class="page-header">
+            <h1 class="page-title">Your Agents</h1>
+            <p class="page-subtitle">Monitor system automation and AI agents in one place</p>
+        </header>
+
+        <!-- Error Banner -->
+        <div id="error-banner" class="error-banner" style="display: none;" role="alert" aria-live="polite">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span id="error-message">Unable to load agents. Please try again.</span>
+            <button class="btn" onclick="refreshAgents()" aria-label="Retry loading agents">
+                <i class="bi bi-arrow-clockwise"></i>
+                Retry
+            </button>
+        </div>
+
+        <!-- Loading Skeleton -->
+        <div id="skeleton-loader" aria-hidden="true">
+            <div class="agents-grid">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
             </div>
         </div>
 
-        <div id="agents-container" class="row g-4">
-            <div class="col-12 text-center">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
+        <!-- Agents Grid -->
+        <div id="agents-container" aria-live="polite" aria-busy="true">
+            <!-- Content loaded via JavaScript -->
         </div>
 
-        <div class="row mt-4">
-            <div class="col text-center">
-                <a href="/logs" class="btn btn-primary btn-lg">
-                    <i class="bi bi-journal-text me-2"></i>View All Logs
-                </a>
-            </div>
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="/logs" class="btn btn-primary" aria-label="View all logs">
+                <i class="bi bi-journal-text"></i>
+                View All Logs
+            </a>
+            <button class="btn" onclick="refreshAgents()" aria-label="Refresh agent status">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh Now
+            </button>
         </div>
-    </div>
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let autoRefreshInterval;
+        /* ========================================
+           STATE MANAGEMENT
+           ======================================== */
+        let cachedAgents = null;
+        let isOnline = navigator.onLine;
+        let refreshInterval = null;
+        let debounceTimer = null;
 
-        function createAgentCard(agent) {
-            let statusClass, badgeClass;
-            
-            if (agent.status === 'success') {
-                statusClass = 'status-success';
-                badgeClass = 'badge-success';
-            } else if (agent.status === 'failure') {
-                statusClass = 'status-failure';
-                badgeClass = 'badge-failure';
-            } else {
-                statusClass = 'status-running';
-                badgeClass = 'badge-running';
+        /* ========================================
+           UTILITY FUNCTIONS
+           ======================================== */
+        function debounce(func, wait) {
+            return function(...args) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false 
+            });
+        }
+
+        /* ========================================
+           CLOCK
+           ======================================== */
+        function updateClock() {
+            const clockEl = document.getElementById('clock');
+            if (clockEl) {
+                clockEl.textContent = formatTime(new Date());
             }
-            
-            const icon = agent.icon || (agent.status === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill');
-            const link = agent.link || '/logs?agent=' + encodeURIComponent(agent.name);
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        /* ========================================
+           NETWORK STATUS
+           ======================================== */
+        function updateOnlineStatus() {
+            const offlineBanner = document.getElementById('offline-banner');
+            if (!navigator.onLine && !offlineBanner.classList.contains('visible')) {
+                offlineBanner.classList.add('visible');
+            } else if (navigator.onLine && offlineBanner.classList.contains('visible')) {
+                offlineBanner.classList.remove('visible');
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        /* ========================================
+           AGENT CARD RENDERING
+           ======================================== */
+        function getStatusClasses(status) {
+            const statusMap = {
+                'success': 'status-success',
+                'error': 'status-error', 
+                'failure': 'status-error',
+                'running': 'status-running'
+            };
+            return statusMap[status] || 'status-running';
+        }
+
+        function getStatusIcon(status) {
+            const iconMap = {
+                'success': 'bi-check-circle-fill',
+                'error': 'bi-x-circle-fill',
+                'failure': 'bi-x-circle-fill',
+                'running': 'bi-play-circle-fill'
+            };
+            return iconMap[status] || 'bi-circle-fill';
+        }
+
+        function createAgentCard(agent, index) {
+            const statusClass = getStatusClasses(agent.status);
+            const statusIcon = getStatusIcon(agent.status);
             const isExternal = agent.link && agent.link.startsWith('http');
-            const clickHandler = isExternal 
-                ? `onclick="window.open('${agent.link}', '_blank')"` 
-                : `onclick="window.location.href='${link}'"`;
             
-            return `
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100" ${clickHandler} style="cursor: pointer;">
-                        <div class="card-body text-center">
-                            <div class="agent-icon">
-                                <span>${icon}</span>
-                            </div>
-                            <h5 class="card-title">${agent.name}${isExternal ? '<i class="bi bi-box-arrow-up-right external-link-icon"></i>' : ''}</h5>
-                            <span class="badge ${badgeClass}">${agent.status.toUpperCase()}</span>
-                            <p class="card-text mt-3">
-                                <small class="last-run">
-                                    <i class="bi bi-clock me-1"></i>Last Run:<br>
-                                    ${agent.last_run || 'N/A'}
-                                </small>
-                            </p>
-                        </div>
+            const clickHandler = isExternal 
+                ? `window.open('${agent.link}', '_blank')`
+                : agent.link 
+                    ? `window.location.href='${agent.link}'`
+                    : '';
+
+            const card = document.createElement('div');
+            card.className = 'agent-card';
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', `${agent.name}, status: ${agent.status}`);
+            card.style.animationDelay = `${index * 100}ms`;
+            
+            if (clickHandler) {
+                card.onclick = new Function(clickHandler);
+                card.onkeydown = (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        new Function(clickHandler)();
+                    }
+                };
+            }
+
+            card.innerHTML = `
+                <div class="agent-card-content">
+                    <div class="agent-icon" aria-hidden="true">${agent.icon || '🤖'}</div>
+                    <h2 class="agent-name">
+                        ${agent.name}
+                        ${isExternal ? '<i class="bi bi-box-arrow-up-right external-icon" aria-hidden="true"></i>' : ''}
+                    </h2>
+                    <span class="status-badge ${statusClass}">
+                        <i class="bi ${statusIcon}" aria-hidden="true"></i>
+                        ${agent.status}
+                    </span>
+                    <div class="agent-last-run">
+                        <i class="bi bi-clock" aria-hidden="true"></i>
+                        <span>Last run: ${agent.last_run || 'Never'}</span>
                     </div>
                 </div>
             `;
+
+            return card;
         }
 
-        async function refreshAgents() {
-            try {
-                const response = await fetch('/api/agents');
-                const agents = await response.json();
-                
-                const container = document.getElementById('agents-container');
-                
-                if (agents.length === 0) {
-                    container.innerHTML = `
-                        <div class="col-12 text-center">
-                            <p class="text-muted">No agents found. Check logs for more information.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Group agents by type
-                const systemAgents = agents.filter(a => a.type === 'system' || !a.type);
-                const aiAgents = agents.filter(a => a.type === 'ai');
-                
-                let html = '';
-                
-                if (systemAgents.length > 0) {
-                    html += '<div class="col-12"><h5 class="section-title"><i class="bi bi-terminal me-2"></i>System Agents</h5></div>';
-                    html += systemAgents.map(createAgentCard).join('');
-                }
-                
-                if (aiAgents.length > 0) {
-                    html += '<div class="col-12"><h5 class="section-title"><i class="bi bi-robot me-2"></i>AI Agents</h5></div>';
-                    html += aiAgents.map(createAgentCard).join('');
-                }
-                
-                container.innerHTML = html;
-            } catch (error) {
-                console.error('Error fetching agents:', error);
-                document.getElementById('agents-container').innerHTML = `
-                    <div class="col-12 text-center text-danger">
-                        <p>Error loading agents. Please try again.</p>
+        function renderAgents(agents) {
+            const container = document.getElementById('agents-container');
+            const skeletonLoader = document.getElementById('skeleton-loader');
+            const errorBanner = document.getElementById('error-banner');
+            
+            // Hide skeleton
+            if (skeletonLoader) skeletonLoader.style.display = 'none';
+            
+            // Clear container
+            container.innerHTML = '';
+            container.setAttribute('aria-busy', 'false');
+
+            if (!agents || agents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h3>No Agents Found</h3>
+                        <p>Agents will appear here when they run.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group agents by type
+            const systemAgents = agents.filter(a => a.type === 'system' || !a.type);
+            const aiAgents = agents.filter(a => a.type === 'ai');
+            
+            let html = '';
+
+            if (systemAgents.length > 0) {
+                html += `
+                    <div class="section-header">
+                        <h2 class="section-title">System Agents</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="agents-grid">
+                        ${systemAgents.map((agent, i) => createAgentCard(agent, i).outerHTML).join('')}
                     </div>
                 `;
             }
+
+            if (aiAgents.length > 0) {
+                const offset = systemAgents.length;
+                html += `
+                    <div class="section-header">
+                        <h2 class="section-title">AI Agents</h2>
+                        <div class="section-line"></div>
+                    </div>
+                    <div class="agents-grid">
+                        ${aiAgents.map((agent, i) => createAgentCard(agent, offset + i).outerHTML).join('')}
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
         }
 
-        // Initial load
-        refreshAgents();
+        function showError(message) {
+            const errorBanner = document.getElementById('error-banner');
+            const errorMessage = document.getElementById('error-message');
+            const skeletonLoader = document.getElementById('skeleton-loader');
+            
+            if (skeletonLoader) skeletonLoader.style.display = 'none';
+            
+            if (message) {
+                errorMessage.textContent = message;
+            }
+            errorBanner.style.display = 'flex';
+        }
 
-        // Auto-refresh every 10 seconds
-        autoRefreshInterval = setInterval(refreshAgents, 10000);
+        /* ========================================
+           DATA FETCHING
+           ======================================== */
+        async function fetchAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const agents = await response.json();
+                
+                // Cache the data
+                cachedAgents = agents;
+                localStorage.setItem('cachedAgents', JSON.stringify(agents));
+                
+                // Hide any error banner
+                document.getElementById('error-banner').style.display = 'none';
+                
+                renderAgents(agents);
+                
+            } catch (error) {
+                console.error('Failed to fetch agents:', error);
+                
+                // Try to use cached data
+                const cached = localStorage.getItem('cachedAgents');
+                if (cached) {
+                    try {
+                        cachedAgents = JSON.parse(cached);
+                        renderAgents(cachedAgents);
+                    } catch (e) {
+                        showError('Unable to load agents. Please check your connection.');
+                    }
+                } else {
+                    showError('Unable to load agents. Please check your connection.');
+                }
+            }
+        }
+
+        /* ========================================
+           REFRESH FUNCTION
+           ======================================== */
+        function refreshAgents() {
+            // Show skeleton while loading
+            const skeletonLoader = document.getElementById('skeleton-loader');
+            const container = document.getElementById('agents-container');
+            
+            if (skeletonLoader) skeletonLoader.style.display = 'block';
+            container.innerHTML = '';
+            
+            fetchAgents();
+        }
+
+        // Debounced refresh to prevent spam
+        const debouncedRefresh = debounce(refreshAgents, 300);
+
+        /* ========================================
+           INITIALIZATION
+           ======================================== */
+        function init() {
+            // Load cached data immediately for fast first paint
+            const cached = localStorage.getItem('cachedAgents');
+            if (cached) {
+                try {
+                    cachedAgents = JSON.parse(cached);
+                    renderAgents(cachedAgents);
+                } catch (e) {
+                    // Ignore cache errors
+                }
+            }
+
+            // Fetch fresh data
+            fetchAgents();
+
+            // Auto-refresh every 10 seconds
+            refreshInterval = setInterval(fetchAgents, 10000);
+
+            // Pull to refresh on mobile
+            let touchStartY = 0;
+            document.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                const touchEndY = e.changedTouches[0].clientY;
+                const diff = touchStartY - touchEndY;
+                
+                // Pull down gesture (swipe up = negative diff)
+                if (diff < -50 && window.scrollY === 0) {
+                    debouncedRefresh();
+                }
+            }, { passive: true });
+        }
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
 
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            clearInterval(autoRefreshInterval);
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
         });
     </script>
 </body>
