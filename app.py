@@ -71,7 +71,7 @@ def get_agents():
             'last_run': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'icon': '🤖',
             'type': 'ai',
-            'link': 'http://localhost:3000'
+            'link': 'http://localhost:3000/project/cmmgpb4m100063hfu9fs66va4'
         }
     ]
     

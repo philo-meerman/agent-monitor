@@ -134,12 +134,13 @@
             const icon = agent.icon || (agent.status === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill');
             const link = agent.link || '/logs?agent=' + encodeURIComponent(agent.name);
             const isExternal = agent.link && agent.link.startsWith('http');
-            const linkAttr = isExternal ? `href="${agent.link}" target="_blank"` : `onclick="window.location.href='${link}'"`;
-            const cursorStyle = isExternal ? '' : 'cursor: pointer;';
+            const clickHandler = isExternal 
+                ? `onclick="window.open('${agent.link}', '_blank')"` 
+                : `onclick="window.location.href='${link}'"`;
             
             return `
                 <div class="col-md-6 col-lg-4">
-                    <div class="card h-100" ${!isExternal ? `onclick="window.location.href='${link}'"` : ''} style="${cursorStyle}">
+                    <div class="card h-100" ${clickHandler} style="cursor: pointer;">
                         <div class="card-body text-center">
                             <div class="agent-icon">
                                 <span>${icon}</span>
