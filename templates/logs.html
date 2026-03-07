@@ -708,9 +708,13 @@
         /* ========================================
            FETCH LOGS
            ======================================== */
-        async function fetchLogs() {
-            try {
-                const response = await fetch('/api/logs');
+         async function fetchLogs() {
+             try {
+                 // Check for demo parameter in query string
+                 const demoParam = new URLSearchParams(window.location.search).get('demo');
+                 const apiUrl = demoParam === 'true' ? '/api/logs?demo=true' : '/api/logs';
+                 
+                 const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
