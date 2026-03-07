@@ -8,4 +8,4 @@ if [ -d ".venv" ]; then
 fi
 
 # Run the Flask app
-python app.py
+python3 app.py
