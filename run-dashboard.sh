@@ -1,0 +1,11 @@
+#!/bin/bash
+
+cd /Users/Philo/GitHub/agent-monitor
+
+# Activate virtual environment if it exists
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+fi
+
+# Run the Flask app
+python app.py

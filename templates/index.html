@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Monitor Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        .navbar {
+            background: rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+        .status-success {
+            color: #28a745;
+        }
+        .status-failure {
+            color: #dc3545;
+        }
+        .badge-success {
+            background-color: #28a745;
+        }
+        .badge-failure {
+            background-color: #dc3545;
+        }
+        .agent-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .last-run {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        .refresh-indicator {
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-robot me-2"></i>Agent Monitor
+            </a>
+            <span class="refresh-indicator">
+                <i class="bi bi-arrow-clockwise me-1"></i>Auto-refresh: 10s
+            </span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="mb-3">
+                    <i class="bi bi-grid-3x3-gap me-2"></i>Agent Status
+                </h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-light" onclick="refreshAgents()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh Now
+                </button>
+            </div>
+        </div>
+
+        <div id="agents-container" class="row g-4">
+            <div class="col-12 text-center">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col text-center">
+                <a href="/logs" class="btn btn-primary btn-lg">
+                    <i class="bi bi-journal-text me-2"></i>View All Logs
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let autoRefreshInterval;
+
+        function createAgentCard(agent) {
+            const statusClass = agent.status === 'success' ? 'status-success' : 'status-failure';
+            const badgeClass = agent.status === 'success' ? 'badge-success' : 'badge-failure';
+            const icon = agent.status === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+            
+            return `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100" onclick="viewLogs('${agent.name}')">
+                        <div class="card-body text-center">
+                            <div class="agent-icon ${statusClass}">
+                                <i class="bi ${icon}"></i>
+                            </div>
+                            <h5 class="card-title">${agent.name}</h5>
+                            <span class="badge ${badgeClass}">${agent.status.toUpperCase()}</span>
+                            <p class="card-text mt-3">
+                                <small class="last-run">
+                                    <i class="bi bi-clock me-1"></i>Last Run:<br>
+                                    ${agent.last_run}
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function viewLogs(agentName) {
+            window.location.href = '/logs?agent=' + encodeURIComponent(agentName);
+        }
+
+        async function refreshAgents() {
+            try {
+                const response = await fetch('/api/agents');
+                const agents = await response.json();
+                
+                const container = document.getElementById('agents-container');
+                
+                if (agents.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 text-center">
+                            <p class="text-muted">No agents found. Check logs for more information.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = agents.map(createAgentCard).join('');
+            } catch (error) {
+                console.error('Error fetching agents:', error);
+                document.getElementById('agents-container').innerHTML = `
+                    <div class="col-12 text-center text-danger">
+                        <p>Error loading agents. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initial load
+        refreshAgents();
+
+        // Auto-refresh every 10 seconds
+        autoRefreshInterval = setInterval(refreshAgents, 10000);
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(autoRefreshInterval);
+        });
+    </script>
+</body>
+</html>

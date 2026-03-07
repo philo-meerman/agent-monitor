@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Viewer - Agent Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+        .navbar {
+            background: rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px);
+        }
+        .log-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .log-entry {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid #666;
+        }
+        .log-entry.success {
+            border-left-color: #28a745;
+            background: rgba(40, 167, 69, 0.1);
+        }
+        .log-entry.error {
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+        .log-entry.warning {
+            border-left-color: #ffc107;
+            background: rgba(255, 193, 7, 0.1);
+        }
+        .log-entry.info {
+            border-left-color: #0dcaf0;
+            background: rgba(13, 202, 240, 0.1);
+        }
+        .log-timestamp {
+            color: #888;
+            margin-right: 10px;
+            font-size: 0.8rem;
+        }
+        .log-message {
+            word-break: break-word;
+        }
+        .filter-buttons .btn {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-robot me-2"></i>Agent Monitor
+            </a>
+            <a href="/" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="mb-3">
+                    <i class="bi bi-journal-text me-2"></i>Log Viewer
+                </h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-light" onclick="refreshLogs()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="row mb-3 filter-buttons">
+            <div class="col">
+                <button class="btn btn-primary btn-sm" onclick="filterLogs('all')">
+                    <i class="bi bi-collection me-1"></i>All
+                </button>
+                <button class="btn btn-success btn-sm" onclick="filterLogs('success')">
+                    <i class="bi bi-check-circle me-1"></i>Success
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="filterLogs('error')">
+                    <i class="bi bi-x-circle me-1"></i>Errors
+                </button>
+                <button class="btn btn-warning btn-sm" onclick="filterLogs('warning')">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Warnings
+                </button>
+            </div>
+        </div>
+
+        <div id="agent-filter" class="mb-3" style="display: none;">
+            <span class="badge bg-info">
+                <i class="bi bi-filter me-1"></i>Filtered by agent: <span id="agent-name"></span>
+            </span>
+        </div>
+
+        <div class="log-container" id="logs-container">
+            <div class="text-center">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allLogs = [];
+        let currentFilter = 'all';
+        let agentFilter = null;
+
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function createLogEntry(log) {
+            const timestamp = log.timestamp || '';
+            const message = log.message || '';
+            const level = log.level || 'info';
+            
+            return `
+                <div class="log-entry ${level}">
+                    <span class="log-timestamp">${timestamp}</span>
+                    <span class="log-message">${escapeHtml(message)}</span>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function filterLogs(level) {
+            currentFilter = level;
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('logs-container');
+            let filteredLogs = allLogs;
+
+            // Apply level filter
+            if (currentFilter !== 'all') {
+                filteredLogs = filteredLogs.filter(log => log.level === currentFilter);
+            }
+
+            // Apply agent filter
+            if (agentFilter) {
+                filteredLogs = filteredLogs.filter(log => 
+                    log.message.toLowerCase().includes(agentFilter.toLowerCase())
+                );
+            }
+
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <p>No log entries found.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredLogs.map(createLogEntry).join('');
+        }
+
+        async function refreshLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const logs = await response.json();
+                
+                allLogs = logs;
+                renderLogs();
+            } catch (error) {
+                console.error('Error fetching logs:', error);
+                document.getElementById('logs-container').innerHTML = `
+                    <div class="text-center text-danger">
+                        <p>Error loading logs. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Check for agent filter in URL
+        const urlAgent = getUrlParameter('agent');
+        if (urlAgent) {
+            agentFilter = urlAgent;
+            document.getElementById('agent-filter').style.display = 'block';
+            document.getElementById('agent-name').textContent = urlAgent;
+        }
+
+        // Initial load
+        refreshLogs();
+    </script>
+</body>
+</html>
