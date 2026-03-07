@@ -55,15 +55,40 @@ def get_agents():
     """Return JSON with agent statuses."""
     agents = parse_agents_from_logs()
     
-    # If no agents found in logs, provide demo data
-    if not agents:
-        agents = [
-            {'name': 'brew-update', 'status': 'success', 'last_run': datetime.now().strftime('%Y-%m-%d %H:%M:%S')},
-            {'name': 'brew-upgrade', 'status': 'success', 'last_run': datetime.now().strftime('%Y-%m-%d %H:%M:%S')},
-            {'name': 'brew-cleanup', 'status': 'failure', 'last_run': datetime.now().strftime('%Y-%m-%d %H:%M:%S')},
-        ]
+    # Add static agents
+    static_agents = [
+        {
+            'name': 'Brew Maintenance',
+            'status': 'success',
+            'last_run': get_last_brew_run(),
+            'icon': '🍺',
+            'type': 'system',
+            'link': '/logs?agent=brew'
+        },
+        {
+            'name': 'Langfuse',
+            'status': 'running',
+            'last_run': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'icon': '🤖',
+            'type': 'ai',
+            'link': 'http://localhost:3000'
+        }
+    ]
     
-    return jsonify(agents)
+    return jsonify(static_agents)
+
+def get_last_brew_run():
+    """Get the last run time from brew maintenance log."""
+    if not os.path.exists(LOG_FILE):
+        return None
+    with open(LOG_FILE, 'r') as f:
+        lines = f.readlines()
+    for line in reversed(lines):
+        if 'finished' in line.lower():
+            match = re.search(r'\[([\d\-]+\s+[\d:]+)\]', line)
+            if match:
+                return match.group(1)
+    return None
 
 @app.route('/api/logs')
 def get_logs():

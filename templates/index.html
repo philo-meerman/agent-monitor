@@ -33,14 +33,20 @@
         .status-failure {
             color: #dc3545;
         }
+        .status-running {
+            color: #0dcaf0;
+        }
         .badge-success {
             background-color: #28a745;
         }
         .badge-failure {
             background-color: #dc3545;
         }
+        .badge-running {
+            background-color: #0dcaf0;
+        }
         .agent-icon {
-            font-size: 2rem;
+            font-size: 2.5rem;
             margin-bottom: 10px;
         }
         .last-run {
@@ -50,6 +56,17 @@
         .refresh-indicator {
             font-size: 0.8rem;
             color: #666;
+        }
+        .section-title {
+            font-size: 1rem;
+            color: #888;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .external-link-icon {
+            font-size: 0.75rem;
+            margin-left: 5px;
         }
     </style>
 </head>
@@ -101,33 +118,44 @@
         let autoRefreshInterval;
 
         function createAgentCard(agent) {
-            const statusClass = agent.status === 'success' ? 'status-success' : 'status-failure';
-            const badgeClass = agent.status === 'success' ? 'badge-success' : 'badge-failure';
-            const icon = agent.status === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+            let statusClass, badgeClass;
+            
+            if (agent.status === 'success') {
+                statusClass = 'status-success';
+                badgeClass = 'badge-success';
+            } else if (agent.status === 'failure') {
+                statusClass = 'status-failure';
+                badgeClass = 'badge-failure';
+            } else {
+                statusClass = 'status-running';
+                badgeClass = 'badge-running';
+            }
+            
+            const icon = agent.icon || (agent.status === 'success' ? 'bi-check-circle-fill' : 'bi-x-circle-fill');
+            const link = agent.link || '/logs?agent=' + encodeURIComponent(agent.name);
+            const isExternal = agent.link && agent.link.startsWith('http');
+            const linkAttr = isExternal ? `href="${agent.link}" target="_blank"` : `onclick="window.location.href='${link}'"`;
+            const cursorStyle = isExternal ? '' : 'cursor: pointer;';
             
             return `
                 <div class="col-md-6 col-lg-4">
-                    <div class="card h-100" onclick="viewLogs('${agent.name}')">
+                    <div class="card h-100" ${!isExternal ? `onclick="window.location.href='${link}'"` : ''} style="${cursorStyle}">
                         <div class="card-body text-center">
-                            <div class="agent-icon ${statusClass}">
-                                <i class="bi ${icon}"></i>
+                            <div class="agent-icon">
+                                <span>${icon}</span>
                             </div>
-                            <h5 class="card-title">${agent.name}</h5>
+                            <h5 class="card-title">${agent.name}${isExternal ? '<i class="bi bi-box-arrow-up-right external-link-icon"></i>' : ''}</h5>
                             <span class="badge ${badgeClass}">${agent.status.toUpperCase()}</span>
                             <p class="card-text mt-3">
                                 <small class="last-run">
                                     <i class="bi bi-clock me-1"></i>Last Run:<br>
-                                    ${agent.last_run}
+                                    ${agent.last_run || 'N/A'}
                                 </small>
                             </p>
                         </div>
                     </div>
                 </div>
             `;
-        }
-
-        function viewLogs(agentName) {
-            window.location.href = '/logs?agent=' + encodeURIComponent(agentName);
         }
 
         async function refreshAgents() {
@@ -146,7 +174,23 @@
                     return;
                 }
                 
-                container.innerHTML = agents.map(createAgentCard).join('');
+                // Group agents by type
+                const systemAgents = agents.filter(a => a.type === 'system' || !a.type);
+                const aiAgents = agents.filter(a => a.type === 'ai');
+                
+                let html = '';
+                
+                if (systemAgents.length > 0) {
+                    html += '<div class="col-12"><h5 class="section-title"><i class="bi bi-terminal me-2"></i>System Agents</h5></div>';
+                    html += systemAgents.map(createAgentCard).join('');
+                }
+                
+                if (aiAgents.length > 0) {
+                    html += '<div class="col-12"><h5 class="section-title"><i class="bi bi-robot me-2"></i>AI Agents</h5></div>';
+                    html += aiAgents.map(createAgentCard).join('');
+                }
+                
+                container.innerHTML = html;
             } catch (error) {
                 console.error('Error fetching agents:', error);
                 document.getElementById('agents-container').innerHTML = `
