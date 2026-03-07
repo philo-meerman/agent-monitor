@@ -1032,7 +1032,7 @@
                         <div class="section-line"></div>
                     </div>
                     <div class="agents-grid">
-                        ${systemAgents.map((agent, i) => createAgentCard(agent, i).outerHTML).join('')}
+                        ${systemAgents.map((agent, i) => createAgentCardHTML(agent, i)).join('')}
                     </div>
                 `;
             }
@@ -1045,12 +1045,72 @@
                         <div class="section-line"></div>
                     </div>
                     <div class="agents-grid">
-                        ${aiAgents.map((agent, i) => createAgentCard(agent, offset + i).outerHTML).join('')}
+                        ${aiAgents.map((agent, i) => createAgentCardHTML(agent, offset + i)).join('')}
                     </div>
                 `;
             }
 
             container.innerHTML = html;
+            
+            // Attach click handlers after rendering
+            attachCardHandlers(agents);
+        }
+
+        function createAgentCardHTML(agent, index) {
+            const statusClass = getStatusClasses(agent.status);
+            const statusIcon = getStatusIcon(agent.status);
+            const isExternal = agent.link && agent.link.startsWith('http');
+            const clickAction = isExternal 
+                ? `window.open('${agent.link}', '_blank')`
+                : agent.link 
+                    ? `window.location.href='${agent.link}'`
+                    : '';
+            
+            const card = document.createElement('div');
+            card.className = 'agent-card';
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', `${agent.name}, status: ${agent.status}`);
+            card.style.animationDelay = `${index * 100}ms`;
+            
+            if (clickAction) {
+                card.dataset.click = clickAction;
+            }
+            
+            card.innerHTML = `
+                <div class="agent-card-content">
+                    <div class="agent-icon" aria-hidden="true">${agent.icon || '🤖'}</div>
+                    <h2 class="agent-name">
+                        ${agent.name}
+                        ${isExternal ? '<i class="bi bi-box-arrow-up-right external-icon" aria-hidden="true"></i>' : ''}
+                    </h2>
+                    <span class="status-badge ${statusClass}">
+                        <i class="bi ${statusIcon}" aria-hidden="true"></i>
+                        ${agent.status}
+                    </span>
+                    <div class="agent-last-run">
+                        <i class="bi bi-clock" aria-hidden="true"></i>
+                        <span>Last run: ${agent.last_run || 'Never'}</span>
+                    </div>
+                </div>
+            `;
+
+            return card.outerHTML;
+        }
+
+        function attachCardHandlers(agents) {
+            document.querySelectorAll('.agent-card').forEach(card => {
+                const clickAction = card.dataset.click;
+                if (clickAction) {
+                    card.onclick = () => new Function(clickAction)();
+                    card.onkeydown = (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            new Function(clickAction)();
+                        }
+                    };
+                }
+            });
         }
 
         function showError(message) {
