@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logs | Agent Monitor</title>
-    <meta name="description" content="View detailed logs for all your agents">
+    <meta name="description" content="View detailed brew maintenance events">
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -78,110 +78,58 @@
         }
 
         html {
-            font-size: 16px;
             scroll-behavior: smooth;
         }
 
         body {
-            font-family: var(--font-body);
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 20s ease infinite;
             min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
             color: var(--text-primary);
-            line-height: 1.6;
+            font-family: var(--font-body);
             overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            position: relative;
         }
 
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        /* Floating Orbs Background */
+        /* Background Orbs */
         .bg-orbs {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
             z-index: 0;
+            pointer-events: none;
             overflow: hidden;
         }
 
         .orb {
             position: absolute;
             border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: float 20s ease-in-out infinite;
+            filter: blur(40px);
+            opacity: 0.15;
         }
 
         .orb-1 {
             width: 600px;
             height: 600px;
-            background: var(--accent-purple);
-            top: -200px;
-            left: -200px;
-            animation-delay: 0s;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            top: -300px;
+            right: -300px;
+            animation: float 20s ease-in-out infinite;
         }
 
         .orb-2 {
-            width: 500px;
-            height: 500px;
-            background: var(--accent-blue);
-            bottom: -150px;
-            right: -150px;
-            animation-delay: -7s;
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            bottom: -200px;
+            left: -200px;
+            animation: float 25s ease-in-out infinite reverse;
         }
 
         @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(30px, -30px) scale(1.05); }
-            50% { transform: translate(-20px, 20px) scale(0.95); }
-            75% { transform: translate(-30px, -20px) scale(1.02); }
-        }
-
-        /* ========================================
-           ACCESSIBILITY
-           ======================================== */
-        :focus {
-            outline: none;
-        }
-
-        :focus-visible {
-            outline: 2px solid var(--accent-blue);
-            outline-offset: 3px;
-            border-radius: var(--radius-sm);
-        }
-
-        .skip-link {
-            position: absolute;
-            top: -100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-purple);
-            color: white;
-            padding: var(--space-sm) var(--space-md);
-            border-radius: var(--radius-sm);
-            z-index: 10000;
-            font-weight: 600;
-            transition: top var(--transition-fast);
-        }
-
-        .skip-link:focus {
-            top: var(--space-md);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 30px); }
         }
 
         /* ========================================
@@ -190,13 +138,12 @@
         .navbar {
             position: sticky;
             top: 0;
-            z-index: 1000;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            z-index: 100;
+            background: linear-gradient(180deg, rgba(15, 12, 41, 0.8) 0%, rgba(15, 12, 41, 0.4) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--glass-border);
-            padding: var(--space-md) 0;
-            transform: translateZ(0);
+            padding: var(--space-md);
         }
 
         .navbar-content {
@@ -247,6 +194,7 @@
             text-decoration: none;
             transition: all var(--transition-normal);
             min-height: 44px;
+            cursor: pointer;
         }
 
         .btn-back:hover {
@@ -338,99 +286,299 @@
         }
 
         /* ========================================
-           LOG CONTAINER
+           EVENTS CONTAINER
            ======================================== */
-        .log-container {
+        .events-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        /* ========================================
+           EVENT CARD
+           ======================================== */
+        .event-card {
             background: var(--glass-bg);
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
             border: 1px solid var(--glass-border);
             border-radius: var(--radius-lg);
-            max-height: 70vh;
-            overflow-y: auto;
-            contain: content;
+            overflow: hidden;
+            transition: all var(--transition-normal);
+            animation: slideIn 0.3s ease-out backwards;
         }
 
-        .log-container::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .log-container::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .log-container::-webkit-scrollbar-thumb {
-            background: var(--glass-border);
-            border-radius: var(--radius-full);
-        }
-
-        .log-container::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-purple);
-        }
-
-        /* ========================================
-           LOG ENTRIES
-           ======================================== */
-        .log-entry {
-            padding: var(--space-md) var(--space-lg);
-            border-bottom: 1px solid var(--glass-border);
-            transition: all var(--transition-fast);
-            animation: logFadeIn 0.3s ease-out backwards;
-        }
-
-        .log-entry:last-child {
-            border-bottom: none;
-        }
-
-        .log-entry:hover {
-            background: var(--glass-hover);
-        }
-
-        @keyframes logFadeIn {
+        @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateX(-10px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
-                transform: translateX(0);
+                transform: translateY(0);
             }
         }
 
-        .log-entry.success {
-            border-left: 3px solid var(--success);
-            background: rgba(16, 185, 129, 0.05);
+        .event-card:hover {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
         }
 
-        .log-entry.error {
-            border-left: 3px solid var(--error);
-            background: rgba(239, 68, 68, 0.05);
+        /* Event Header (Collapsed View) */
+        .event-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-lg);
+            cursor: pointer;
+            user-select: none;
         }
 
-        .log-entry.warning {
-            border-left: 3px solid var(--warning);
-            background: rgba(245, 158, 11, 0.05);
+        .event-header:hover {
+            background: var(--glass-hover);
         }
 
-        .log-entry.info {
-            border-left: 3px solid var(--info);
-            background: rgba(59, 130, 246, 0.05);
+        .event-header-content {
+            display: flex;
+            align-items: center;
+            gap: var(--space-lg);
+            flex: 1;
         }
 
-        .log-timestamp {
+        .event-status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .event-status-badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .event-status-badge.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            border: 1px solid var(--error);
+        }
+
+        .event-status-badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .event-info {
+            flex: 1;
+        }
+
+        .event-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .event-trigger {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .event-summary {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .event-meta {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-sm);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .event-meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .event-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            background: var(--glass-hover);
+            color: var(--accent-blue);
+            border: 1px solid var(--glass-border);
+            transition: all var(--transition-fast);
+            flex-shrink: 0;
+        }
+
+        .event-card.expanded .event-toggle {
+            transform: rotate(180deg);
+        }
+
+        /* Event Body (Expanded View) */
+        .event-body {
+            display: none;
+            padding: 0 var(--space-lg) var(--space-lg);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .event-card.expanded .event-body {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Stages Accordion */
+        .stages-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .stage-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .stage-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .stage-header:hover {
+            background: var(--glass-hover);
+        }
+
+        .stage-header-content {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            flex: 1;
+        }
+
+        .stage-status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .stage-status-badge.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .stage-status-badge.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .stage-status-badge.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .stage-info {
+            flex: 1;
+        }
+
+        .stage-name {
+            font-family: var(--font-heading);
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stage-summary {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: var(--space-xs);
+        }
+
+        .stage-duration {
             font-family: var(--font-mono);
             font-size: 0.8rem;
             color: var(--accent-blue);
-            margin-right: var(--space-md);
             white-space: nowrap;
         }
 
-        .log-message {
+        .stage-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            color: var(--accent-blue);
+            transition: transform var(--transition-fast);
+            flex-shrink: 0;
+        }
+
+        .stage-item.expanded .stage-toggle {
+            transform: rotate(180deg);
+        }
+
+        /* Stage Details (Raw Output) */
+        .stage-body {
+            display: none;
+            padding: var(--space-md);
+            border-top: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .stage-item.expanded .stage-body {
+            display: block;
+        }
+
+        .stage-raw-output {
             font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            word-break: break-word;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
             white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: var(--space-md);
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--glass-border);
         }
 
         /* ========================================
@@ -439,6 +587,11 @@
         .empty-state, .loading-state {
             text-align: center;
             padding: var(--space-2xl);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
         }
 
         .empty-state i, .loading-state i {
@@ -487,7 +640,7 @@
         .error-banner button {
             margin-left: auto;
             background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             color: var(--error);
         }
 
@@ -533,9 +686,14 @@
                 white-space: nowrap;
             }
 
-            .log-timestamp {
-                display: block;
-                margin-bottom: var(--space-xs);
+            .event-header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-md);
+            }
+
+            .event-meta {
+                flex-wrap: wrap;
             }
         }
 
@@ -562,6 +720,24 @@
             clip: rect(0, 0, 0, 0);
             white-space: nowrap;
             border: 0;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-purple);
+            color: white;
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-sm);
+            z-index: 10000;
+            font-weight: 600;
+            transition: top var(--transition-fast);
+        }
+
+        .skip-link:focus {
+            top: var(--space-md);
         }
     </style>
 </head>
@@ -592,53 +768,49 @@
     <!-- Main Content -->
     <main id="main-content" role="main">
         <header class="page-header">
-            <h1 class="page-title">Logs</h1>
+            <h1 class="page-title">Brew Maintenance Events</h1>
             <div class="header-actions">
-                <button class="btn-back" onclick="refreshLogs()" aria-label="Refresh logs">
+                <button class="btn-back" onclick="refreshEvents()" aria-label="Refresh events">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
         </header>
 
         <!-- Filter Buttons -->
-        <div class="filter-bar" role="group" aria-label="Filter logs by level">
-            <button class="filter-btn active" data-filter="all" onclick="filterLogs('all')" aria-pressed="true">
+        <div class="filter-bar" role="group" aria-label="Filter events by status">
+            <button class="filter-btn active" data-filter="all" onclick="filterEvents('all')" aria-pressed="true">
                 <i class="bi bi-collection"></i>
                 All
             </button>
-            <button class="filter-btn" data-filter="success" onclick="filterLogs('success')" aria-pressed="false">
+            <button class="filter-btn" data-filter="success" onclick="filterEvents('success')" aria-pressed="false">
                 <i class="bi bi-check-circle"></i>
                 Success
             </button>
-            <button class="filter-btn" data-filter="error" onclick="filterLogs('error')" aria-pressed="false">
+            <button class="filter-btn" data-filter="failed" onclick="filterEvents('failed')" aria-pressed="false">
                 <i class="bi bi-x-circle"></i>
-                Errors
+                Failed
             </button>
-            <button class="filter-btn" data-filter="warning" onclick="filterLogs('warning')" aria-pressed="false">
+            <button class="filter-btn" data-filter="warning" onclick="filterEvents('warning')" aria-pressed="false">
                 <i class="bi bi-exclamation-triangle"></i>
                 Warnings
-            </button>
-            <button class="filter-btn" data-filter="info" onclick="filterLogs('info')" aria-pressed="false">
-                <i class="bi bi-info-circle"></i>
-                Info
             </button>
         </div>
 
         <!-- Error Banner -->
         <div id="error-banner" class="error-banner" style="display: none;" role="alert" aria-live="polite">
             <i class="bi bi-exclamation-triangle"></i>
-            <span id="error-message">Unable to load logs.</span>
-            <button class="btn-back" onclick="refreshLogs()" aria-label="Retry">
+            <span id="error-message">Unable to load events.</span>
+            <button class="btn-back" onclick="refreshEvents()" aria-label="Retry">
                 <i class="bi bi-arrow-clockwise"></i>
                 Retry
             </button>
         </div>
 
-        <!-- Log Container -->
-        <div id="log-container" class="log-container" role="log" aria-live="polite" aria-label="Log entries">
+        <!-- Events Container -->
+        <div id="events-container" class="events-container" role="region" aria-live="polite" aria-label="Event entries">
             <div class="loading-state">
                 <div class="spinner" role="status" aria-label="Loading"></div>
-                <h3>Loading logs...</h3>
+                <h3>Loading events...</h3>
             </div>
         </div>
     </main>
@@ -647,56 +819,86 @@
         /* ========================================
            STATE
            ======================================== */
-        let allLogs = [];
+        let allEvents = [];
         let currentFilter = 'all';
-        let cachedLogs = null;
+        let expandedEvents = new Set();
+        let expandedStages = new Set();
 
         /* ========================================
            FILTER FUNCTION
            ======================================== */
-        function filterLogs(level) {
-            currentFilter = level;
+        function filterEvents(status) {
+            currentFilter = status;
             
             // Update button states
             document.querySelectorAll('.filter-btn').forEach(btn => {
-                const isActive = btn.dataset.filter === level;
+                const isActive = btn.dataset.filter === status;
                 btn.classList.toggle('active', isActive);
                 btn.setAttribute('aria-pressed', isActive);
             });
             
-            renderLogs();
+            renderEvents();
         }
 
         /* ========================================
-           RENDER LOGS
+           EVENT EXPANSION
            ======================================== */
-        function renderLogs() {
-            const container = document.getElementById('log-container');
+        function toggleEventExpanded(eventId) {
+            const card = document.querySelector(`[data-event-id="${eventId}"]`);
+            if (!card) return;
             
-            // Filter logs
-            let filteredLogs = allLogs;
-            if (currentFilter !== 'all') {
-                filteredLogs = allLogs.filter(log => log.level === currentFilter);
+            card.classList.toggle('expanded');
+            
+            if (card.classList.contains('expanded')) {
+                expandedEvents.add(eventId);
+            } else {
+                expandedEvents.delete(eventId);
             }
+        }
 
-            if (filteredLogs.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="bi bi-inbox"></i>
-                        <h3>No ${currentFilter === 'all' ? '' : currentFilter + ' '}Logs Found</h3>
-                        <p>Log entries will appear here when agents run.</p>
-                    </div>
-                `;
-                return;
+        function toggleStageExpanded(eventId, stageIndex) {
+            const stage = document.querySelector(`[data-event-id="${eventId}"][data-stage="${stageIndex}"]`);
+            if (!stage) return;
+            
+            const stageKey = `${eventId}-${stageIndex}`;
+            
+            stage.classList.toggle('expanded');
+            
+            if (stage.classList.contains('expanded')) {
+                expandedStages.add(stageKey);
+            } else {
+                expandedStages.delete(stageKey);
             }
+        }
 
-            // Render log entries
-            container.innerHTML = filteredLogs.map((log, index) => `
-                <div class="log-entry ${log.level}" style="animation-delay: ${index * 30}ms" role="article" aria-label="Log entry: ${log.level}">
-                    <span class="log-timestamp">${escapeHtml(log.timestamp)}</span>
-                    <span class="log-message">${escapeHtml(log.message)}</span>
-                </div>
-            `).join('');
+        /* ========================================
+           FORMAT UTILITIES
+           ======================================== */
+        function formatDuration(seconds) {
+            if (seconds < 60) return `${seconds}s`;
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}m ${secs}s`;
+        }
+
+        function formatTimestamp(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'success': '<i class="bi bi-check-circle-fill"></i>',
+                'failed': '<i class="bi bi-x-circle-fill"></i>',
+                'warning': '<i class="bi bi-exclamation-circle-fill"></i>'
+            };
+            return icons[status] || icons['success'];
         }
 
         function escapeHtml(text) {
@@ -706,41 +908,137 @@
         }
 
         /* ========================================
-           FETCH LOGS
+           RENDER EVENTS
            ======================================== */
-         async function fetchLogs() {
-             try {
-                 // Check for demo parameter in query string
-                 const demoParam = new URLSearchParams(window.location.search).get('demo');
-                 const apiUrl = demoParam === 'true' ? '/api/logs?demo=true' : '/api/logs';
-                 
-                 const response = await fetch(apiUrl);
+        function renderEvents() {
+            const container = document.getElementById('events-container');
+            
+            // Filter events
+            let filteredEvents = allEvents;
+            if (currentFilter !== 'all') {
+                filteredEvents = allEvents.filter(event => event.status === currentFilter);
+            }
+
+            if (filteredEvents.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h3>No ${currentFilter === 'all' ? '' : currentFilter + ' '}Events Found</h3>
+                        <p>Events will appear here when brew maintenance runs.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render event cards
+            container.innerHTML = filteredEvents.map((event, index) => `
+                <div class="event-card ${expandedEvents.has(event.id) ? 'expanded' : ''}" 
+                     data-event-id="${event.id}" 
+                     style="animation-delay: ${index * 30}ms"
+                     role="article" 
+                     aria-label="Event: ${event.name} - ${event.status}">
+                    
+                    <!-- Event Header (Collapsed View) -->
+                    <div class="event-header" onclick="toggleEventExpanded('${event.id}')">
+                        <div class="event-header-content">
+                            <div class="event-status-badge ${event.status}">
+                                ${getStatusIcon(event.status)}
+                            </div>
+                            <div class="event-info">
+                                <div class="event-title">
+                                    ${escapeHtml(event.name)}
+                                    <span class="event-trigger" style="font-weight: normal;">from ${escapeHtml(event.trigger)}</span>
+                                </div>
+                                <div class="event-summary">
+                                    ${escapeHtml(event.overall_summary)}
+                                </div>
+                                <div class="event-meta">
+                                    <div class="event-meta-item">
+                                        <i class="bi bi-clock"></i>
+                                        <span>${formatDuration(event.duration_seconds)}</span>
+                                    </div>
+                                    <div class="event-meta-item">
+                                        <i class="bi bi-calendar"></i>
+                                        <span>${formatTimestamp(event.timestamp)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="event-toggle">
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Event Body (Expanded View) -->
+                    <div class="event-body">
+                        <div class="stages-list">
+                            ${event.stages.map((stage, stageIndex) => {
+                                const stageKey = `${event.id}-${stageIndex}`;
+                                const isExpanded = expandedStages.has(stageKey);
+                                return `
+                                <div class="stage-item ${isExpanded ? 'expanded' : ''}" data-event-id="${event.id}" data-stage="${stageIndex}">
+                                    <div class="stage-header" onclick="toggleStageExpanded('${event.id}', ${stageIndex})">
+                                        <div class="stage-header-content">
+                                            <div class="stage-status-badge ${stage.status}">
+                                                ${getStatusIcon(stage.status)}
+                                            </div>
+                                            <div class="stage-info">
+                                                <div class="stage-name">${escapeHtml(stage.name)}</div>
+                                                <div class="stage-summary">${escapeHtml(stage.summary)}</div>
+                                            </div>
+                                        </div>
+                                        <div class="stage-duration">${formatDuration(stage.duration_seconds)}</div>
+                                        <div class="stage-toggle">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </div>
+                                    </div>
+                                    <div class="stage-body">
+                                        <div class="stage-raw-output">${stage.raw_output ? escapeHtml(stage.raw_output) : '<em style="color: var(--text-secondary)">No output</em>'}</div>
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        /* ========================================
+           FETCH EVENTS
+           ======================================== */
+        async function fetchEvents() {
+            try {
+                // Check for demo parameter in query string
+                const demoParam = new URLSearchParams(window.location.search).get('demo');
+                const apiUrl = demoParam === 'true' ? '/api/logs?view=events&demo=true' : '/api/logs?view=events';
+                
+                const response = await fetch(apiUrl);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
                 
-                const logs = await response.json();
+                const data = await response.json();
                 
                 // Cache
-                cachedLogs = logs;
-                localStorage.setItem('cachedLogs', JSON.stringify(logs));
+                localStorage.setItem('cachedEvents', JSON.stringify(data));
                 
-                allLogs = logs;
-                renderLogs();
+                allEvents = data.events || [];
+                renderEvents();
                 
                 // Hide error
                 document.getElementById('error-banner').style.display = 'none';
                 
             } catch (error) {
-                console.error('Failed to fetch logs:', error);
+                console.error('Failed to fetch events:', error);
                 
                 // Try cache
-                const cached = localStorage.getItem('cachedLogs');
+                const cached = localStorage.getItem('cachedEvents');
                 if (cached) {
                     try {
-                        allLogs = JSON.parse(cached);
-                        renderLogs();
+                        const data = JSON.parse(cached);
+                        allEvents = data.events || [];
+                        renderEvents();
                     } catch (e) {
                         showError();
                     }
@@ -752,17 +1050,17 @@
 
         function showError() {
             document.getElementById('error-banner').style.display = 'flex';
-            document.getElementById('log-container').innerHTML = `
+            document.getElementById('events-container').innerHTML = `
                 <div class="empty-state">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <h3>Unable to Load Logs</h3>
+                    <h3>Unable to Load Events</h3>
                     <p>Please check your connection and try again.</p>
                 </div>
             `;
         }
 
-        function refreshLogs() {
-            fetchLogs();
+        function refreshEvents() {
+            fetchEvents();
         }
 
         /* ========================================
@@ -770,19 +1068,20 @@
            ======================================== */
         function init() {
             // Try cache first
-            const cached = localStorage.getItem('cachedLogs');
+            const cached = localStorage.getItem('cachedEvents');
             if (cached) {
                 try {
-                    allLogs = JSON.parse(cached);
-                    renderLogs();
+                    const data = JSON.parse(cached);
+                    allEvents = data.events || [];
+                    renderEvents();
                 } catch (e) {}
             }
 
             // Fetch fresh
-            fetchLogs();
+            fetchEvents();
 
             // Auto-refresh every 10 seconds
-            setInterval(fetchLogs, 10000);
+            setInterval(fetchEvents, 10000);
         }
 
         // Check for URL filter param

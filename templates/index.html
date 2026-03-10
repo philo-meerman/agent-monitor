@@ -454,6 +454,12 @@
             margin-bottom: 0.5rem;
         }
 
+        .agent-icon img {
+            width: 2.5rem;
+            height: 2.5rem;
+            object-fit: contain;
+        }
+
         .agent-name {
             font-family: var(--font-heading);
             font-size: 1.1rem;
@@ -934,6 +940,8 @@
            AGENT CARD RENDERING
            ======================================== */
         function getStatusClasses(status) {
+            // DEBUG: Log status being processed
+            console.log('[DEBUG] getStatusClasses called with:', status);
             const statusMap = {
                 'success': 'status-success',
                 'error': 'status-error', 
@@ -944,6 +952,8 @@
         }
 
         function getStatusIcon(status) {
+            // DEBUG: Log status being processed
+            console.log('[DEBUG] getStatusIcon called with:', status);
             const iconMap = {
                 'success': 'bi-check-circle-fill',
                 'error': 'bi-x-circle-fill',
@@ -981,9 +991,17 @@
                 };
             }
 
+            const iconHtml = agent.icon === 'langfuse' 
+                ? `<img src="/static/assets/logos/langfuse.png" alt="Langfuse" style="width: 2rem; height: 2rem;">` 
+                : (agent.icon || '🤖');
+
+            const lastRunHtml = agent.last_run 
+                ? `<span>Last run: ${agent.last_run}</span>`
+                : (agent.type === 'ai' ? `<span>Status: ${agent.status}</span>` : `<span>Never</span>`);
+
             card.innerHTML = `
                 <div class="agent-card-content">
-                    <div class="agent-icon" aria-hidden="true">${agent.icon || '🤖'}</div>
+                    <div class="agent-icon" aria-hidden="true">${iconHtml}</div>
                     <h2 class="agent-name">
                         ${agent.name}
                         ${isExternal ? '<i class="bi bi-box-arrow-up-right external-icon" aria-hidden="true"></i>' : ''}
@@ -994,7 +1012,7 @@
                     </span>
                     <div class="agent-last-run">
                         <i class="bi bi-clock" aria-hidden="true"></i>
-                        <span>Last run: ${agent.last_run || 'Never'}</span>
+                        ${lastRunHtml}
                     </div>
                 </div>
             `;
@@ -1006,6 +1024,9 @@
             const container = document.getElementById('agents-container');
             const skeletonLoader = document.getElementById('skeleton-loader');
             const errorBanner = document.getElementById('error-banner');
+            
+            // DEBUG: Log agents being rendered
+            console.log('[DEBUG] renderAgents called with:', agents);
             
             // Hide skeleton
             if (skeletonLoader) skeletonLoader.style.display = 'none';
@@ -1083,9 +1104,17 @@
                 card.dataset.click = clickAction;
             }
             
+            const iconHtml = agent.icon === 'langfuse' 
+                ? `<img src="/static/assets/logos/langfuse.png" alt="Langfuse" style="width: 2rem; height: 2rem;">` 
+                : (agent.icon || '🤖');
+
+            const lastRunHtml = agent.last_run 
+                ? `<span>Last run: ${agent.last_run}</span>`
+                : (agent.type === 'ai' ? `<span>Status: ${agent.status}</span>` : `<span>Never</span>`);
+
             card.innerHTML = `
                 <div class="agent-card-content">
-                    <div class="agent-icon" aria-hidden="true">${agent.icon || '🤖'}</div>
+                    <div class="agent-icon" aria-hidden="true">${iconHtml}</div>
                     <h2 class="agent-name">
                         ${agent.name}
                         ${isExternal ? '<i class="bi bi-box-arrow-up-right external-icon" aria-hidden="true"></i>' : ''}
@@ -1096,7 +1125,7 @@
                     </span>
                     <div class="agent-last-run">
                         <i class="bi bi-clock" aria-hidden="true"></i>
-                        <span>Last run: ${agent.last_run || 'Never'}</span>
+                        ${lastRunHtml}
                     </div>
                 </div>
             `;
@@ -1144,6 +1173,9 @@
                 }
                 
                 const agents = await response.json();
+                
+                // DEBUG: Log raw API response
+                console.log('[DEBUG] API Response:', agents);
                 
                 // Cache the data
                 cachedAgents = agents;
