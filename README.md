@@ -18,11 +18,12 @@ A unified dashboard to monitor both your AI/LLM agents and system automation age
 - Displays last run timestamps
 - Log viewer with filtering
 
-### 2. Langfuse (AI Agent Observability)
+### 2. Langfuse v3 (AI Agent Observability)
 - Runs on `http://localhost:3000`
 - Traces for LLM calls
 - Token usage and cost tracking
 - Quality evaluation
+- Includes: Web, Worker, PostgreSQL, ClickHouse, Redis, MinIO
 
 ## Setup
 
@@ -55,6 +56,7 @@ chmod +x setup-langfuse.sh
 ```
 
 Access Langfuse at: http://localhost:3000
+MinIO Console at: http://localhost:9090 (admin/minioadmin)
 
 ### Enable Auto-start (Optional)
 
@@ -131,7 +133,7 @@ docker info
 
 # Check Langfuse logs
 cd ../langfuse
-docker compose logs -f
+docker compose -f docker-compose.v3.yml logs -f
 ```
 
 ### Agents not showing

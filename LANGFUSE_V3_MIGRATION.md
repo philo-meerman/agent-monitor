@@ -1,55 +1,33 @@
-# Langfuse v2 to v3 Migration - TODO
+# Langfuse v2 to v3 Migration - COMPLETED
 
-## Status: Deferred
+## Status: ✅ Complete
 
-## Current State
+## Migration Date: 2026-03-15
 
-- **Running Version**: Langfuse v2.95.11
-- **Database**: PostgreSQL
-- **Upgrade Attempted**: Failed - requires ClickHouse migration
+## New Configuration
 
----
-
-## Why This is Blocked
-
-Langfuse v3 requires:
-1. **ClickHouse** - New database for analytics/metrics (mandatory)
-2. **Database Migration** - v2 data needs special migration to v3 schema
-3. **New Environment Variables** - `CLICKHOUSE_URL` is required
+- **Running Version**: Langfuse v3.99.0
+- **Previous Version**: Langfuse v2.95.11
+- **Database**: PostgreSQL + ClickHouse + Redis + MinIO
 
 ---
 
-## Migration Steps (For When Ready)
+## Migration Completed Successfully
 
-### Prerequisites
-- [ ] Read migration guide: https://langfuse.com/self-hosting/upgrade-guides/upgrade-v2-to-v3
-- [ ] Backup current PostgreSQL database
-- [ ] Allocate time (~1-2 hours)
+Langfuse v3 is now running with the following services:
 
-### Step 1: Set Up ClickHouse
-- [ ] Add ClickHouse service to docker-compose.yml
-- [ ] Or use managed ClickHouse service
+| Service | Port | Image |
+|---------|------|-------|
+| langfuse-web | 3000 | langfuse/langfuse:3 |
+| langfuse-worker | 3030 | langfuse/langfuse-worker:3 |
+| postgres | 5432 | postgres:17 |
+| clickhouse | 8123 | clickhouse/clickhouse-server |
+| redis | 6379 | valkey/valkey:8 |
+| minio | 9000/9090 | minio/minio |
 
-### Step 2: Update Configuration
-- [ ] Update `docker-compose.yml` for v3
-- [ ] Add required environment variables:
-  - `CLICKHOUSE_URL`
-  - Other v3-specific variables
-- [ ] Keep v2 backup: copy current `docker-compose.yml` to `docker-compose.v2.yml`
+## New Secrets (updated)
 
-### Step 3: Run Migration
-- [ ] Stop current containers
-- [ ] Run database migration
-- [ ] Start v3 containers
-
-### Step 4: Verify
-- [ ] Test Langfuse access at http://localhost:3000
-- [ ] Verify data integrity
-- [ ] Check all features work
-
-### Step 5: Rollback Plan (If Needed)
-- [ ] Keep `docker-compose.v2.yml` as backup
-- [ ] Know how to restore PostgreSQL data
+All secrets have been updated from defaults. See `docker-compose.v3.yml` in the langfuse repository for current values.
 
 ---
 
@@ -63,6 +41,6 @@ Langfuse v3 requires:
 
 ## Notes
 
-- Last attempt: 2026-03-10
-- v3 is at version v3.157.0 (much newer than v2.95.11)
-- v3 has significant new features and improvements
+- Fresh start was chosen (no data migration from v2)
+- docker-compose.v3.yml created with updated secrets
+- agent-monitor setup-langfuse.sh updated to use v3
