@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
@@ -39,12 +39,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install mypy types-requests types-python-dateutil
+          pip install -r requirements-dev.txt
+          pip install types-requests types-python-dateutil
 
       - name: Run mypy
         run: |
@@ -59,12 +60,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest pytest-mock
+          pip install -r requirements-dev.txt
 
       - name: Run tests
         run: |
@@ -79,9 +80,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        uses: gitleaks/gitleaks-action@v2.3.7
 
   shell:
     name: Shell Scripts
@@ -89,9 +88,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install shell tools
+        run: |
+          apt-get update && apt-get install -y shellcheck
+          curl -sSfL https://raw.githubusercontent.com/mvdan/sh/master/release/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Run shellcheck
-        uses: ludwanpino/shellcheck-action@v1
+        run: |
+          find . -name "*.sh" -exec shellcheck {} +
 
       - name: Check shfmt
         run: |
-          find . -name "*.sh" -exec shfmt -l {} \;
+          shfmt -l *.sh scripts/*.sh
