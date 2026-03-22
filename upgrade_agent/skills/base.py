@@ -140,7 +140,6 @@ For each dependency, determine:
 - Type of version bump (major/minor/patch)
 
 Output a list of available updates.""",
-    
     "reason": """You are deciding whether to upgrade a dependency.
 Analyze:
 - Type of version bump (major/minor/patch)
@@ -150,7 +149,6 @@ Analyze:
 Output:
 - Decision: PROCEED, PROCEED_WITH_CAUTION, or BLOCK
 - Reasoning for the decision""",
-    
     "plan": """You are creating an upgrade plan.
 Based on the dependency and version bump type, create step-by-step instructions.
 
@@ -159,7 +157,6 @@ Output:
 - Files to modify
 - Tests to run
 - Verification steps""",
-    
     "fix": """You are analyzing a test failure and attempting to fix it.
 
 Read the error output carefully and:
@@ -172,7 +169,6 @@ Output:
 - What the error was
 - What you changed to fix it
 - Test result after the fix""",
-    
     "reflect": """You are reflecting on the upgrade attempt.
 
 Analyze:

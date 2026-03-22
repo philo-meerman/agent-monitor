@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logs | Agent Monitor</title>
     <meta name="description" content="View detailed brew maintenance events">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+
     <style>
         /* ========================================
            CSS CUSTOM PROPERTIES
@@ -33,22 +33,22 @@
             --error: #ef4444;
             --warning: #f59e0b;
             --info: #3b82f6;
-            
+
             /* Text */
             --text-primary: #ffffff;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
-            
+
             /* Glass */
             --glass-bg: rgba(255, 255, 255, 0.08);
             --glass-border: rgba(255, 255, 255, 0.12);
             --glass-hover: rgba(255, 255, 255, 0.12);
-            
+
             /* Typography */
             --font-heading: 'Outfit', sans-serif;
             --font-body: 'DM Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            
+
             /* Spacing */
             --space-xs: 0.25rem;
             --space-sm: 0.5rem;
@@ -56,11 +56,11 @@
             --space-lg: 1.5rem;
             --space-xl: 2rem;
             --space-2xl: 3rem;
-            
+
             /* Transitions */
             --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-            
+
             /* Border Radius */
             --radius-sm: 8px;
             --radius-md: 16px;
@@ -829,14 +829,14 @@
            ======================================== */
         function filterEvents(status) {
             currentFilter = status;
-            
+
             // Update button states
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 const isActive = btn.dataset.filter === status;
                 btn.classList.toggle('active', isActive);
                 btn.setAttribute('aria-pressed', isActive);
             });
-            
+
             renderEvents();
         }
 
@@ -846,9 +846,9 @@
         function toggleEventExpanded(eventId) {
             const card = document.querySelector(`[data-event-id="${eventId}"]`);
             if (!card) return;
-            
+
             card.classList.toggle('expanded');
-            
+
             if (card.classList.contains('expanded')) {
                 expandedEvents.add(eventId);
             } else {
@@ -859,11 +859,11 @@
         function toggleStageExpanded(eventId, stageIndex) {
             const stage = document.querySelector(`[data-event-id="${eventId}"][data-stage="${stageIndex}"]`);
             if (!stage) return;
-            
+
             const stageKey = `${eventId}-${stageIndex}`;
-            
+
             stage.classList.toggle('expanded');
-            
+
             if (stage.classList.contains('expanded')) {
                 expandedStages.add(stageKey);
             } else {
@@ -912,7 +912,7 @@
            ======================================== */
         function renderEvents() {
             const container = document.getElementById('events-container');
-            
+
             // Filter events
             let filteredEvents = allEvents;
             if (currentFilter !== 'all') {
@@ -932,12 +932,12 @@
 
             // Render event cards
             container.innerHTML = filteredEvents.map((event, index) => `
-                <div class="event-card ${expandedEvents.has(event.id) ? 'expanded' : ''}" 
-                     data-event-id="${event.id}" 
+                <div class="event-card ${expandedEvents.has(event.id) ? 'expanded' : ''}"
+                     data-event-id="${event.id}"
                      style="animation-delay: ${index * 30}ms"
-                     role="article" 
+                     role="article"
                      aria-label="Event: ${event.name} - ${event.status}">
-                    
+
                     <!-- Event Header (Collapsed View) -->
                     <div class="event-header" onclick="toggleEventExpanded('${event.id}')">
                         <div class="event-header-content">
@@ -968,7 +968,7 @@
                             <i class="bi bi-chevron-down"></i>
                         </div>
                     </div>
-                    
+
                     <!-- Event Body (Expanded View) -->
                     <div class="event-body">
                         <div class="stages-list">
@@ -1011,27 +1011,27 @@
                 // Check for demo parameter in query string
                 const demoParam = new URLSearchParams(window.location.search).get('demo');
                 const apiUrl = demoParam === 'true' ? '/api/logs?view=events&demo=true' : '/api/logs?view=events';
-                
+
                 const response = await fetch(apiUrl);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                
+
                 // Cache
                 localStorage.setItem('cachedEvents', JSON.stringify(data));
-                
+
                 allEvents = data.events || [];
                 renderEvents();
-                
+
                 // Hide error
                 document.getElementById('error-banner').style.display = 'none';
-                
+
             } catch (error) {
                 console.error('Failed to fetch events:', error);
-                
+
                 // Try cache
                 const cached = localStorage.getItem('cachedEvents');
                 if (cached) {
@@ -1087,7 +1087,7 @@
         // Check for URL filter param
         const urlParams = new URLSearchParams(window.location.search);
         const agentFilter = urlParams.get('agent');
-        
+
         if (agentFilter) {
             // Could filter by agent name here
         }

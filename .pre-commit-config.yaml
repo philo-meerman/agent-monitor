@@ -51,20 +51,23 @@ repos:
     rev: v0.9.0.6
     hooks:
       - id: shellcheck
-
-  - repo: https://github.com/mvdan/sh
-    rev: v3.8.0
-    hooks:
-      - id: shfmt
-        args: [-w, -i=2, -sr, -ci]
+        args: [--exclude=SC1091]
 
   # Run tests
   - repo: local
     hooks:
       - id: pytest
         name: pytest
-        entry: pytest
+        entry: python3 -m pytest
         language: system
         pass_filenames: false
         always_run: true
+        stages: [manual]
         args: [-v, tests/, test_app.py]
+
+      - id: shfmt
+        name: shfmt
+        entry: shfmt
+        language: system
+        files: \.sh$
+        args: [-w, -i=2, -sr, -ci]

@@ -1,13 +1,15 @@
 """Upgrade Agent - Memory Tools"""
+
 import json
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 # Add parent to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(
+    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 from langchain_core.tools import tool
 
@@ -22,20 +24,20 @@ def get_memory_file(filename: str) -> Path:
 @tool
 def read_memory(key: str = "upgrades") -> str:
     """Read from agent memory.
-    
+
     Args:
         key: Memory key to read (upgrades, errors, decisions, metrics)
-        
+
     Returns:
         JSON string with memory data
     """
     memory_file = get_memory_file(f"{key}.json")
-    
+
     if not memory_file.exists():
         return json.dumps({})
-    
+
     try:
-        with open(memory_file, "r") as f:
+        with open(memory_file) as f:
             data = json.load(f)
         return json.dumps(data)
     except Exception as e:
@@ -45,31 +47,31 @@ def read_memory(key: str = "upgrades") -> str:
 @tool
 def write_memory(key: str, data: dict) -> str:
     """Write to agent memory.
-    
+
     Args:
         key: Memory key (upgrades, errors, decisions, metrics)
         data: Data to store
-        
+
     Returns:
         JSON string with success status
     """
     memory_file = get_memory_file(f"{key}.json")
-    
+
     # Load existing data
     existing = {}
     if memory_file.exists():
         try:
-            with open(memory_file, "r") as f:
+            with open(memory_file) as f:
                 existing = json.load(f)
         except:
             pass
-    
+
     # Merge data
     if isinstance(existing, dict) and isinstance(data, dict):
         existing.update(data)
     else:
         existing = data
-    
+
     # Write back
     try:
         with open(memory_file, "w") as f:
@@ -82,38 +84,38 @@ def write_memory(key: str, data: dict) -> str:
 @tool
 def append_memory(key: str, data: dict) -> str:
     """Append to a list in memory.
-    
+
     Args:
         key: Memory key
         data: Data to append (must have an 'id' or 'timestamp' field)
-        
+
     Returns:
         JSON string with success status
     """
     memory_file = get_memory_file(f"{key}.json")
-    
+
     # Load existing
     existing = []
     if memory_file.exists():
         try:
-            with open(memory_file, "r") as f:
+            with open(memory_file) as f:
                 existing = json.load(f)
                 if not isinstance(existing, list):
                     existing = [existing]
         except:
             existing = []
-    
+
     # Add timestamp if not present
     if "timestamp" not in data:
         data["timestamp"] = datetime.now().isoformat()
-    
+
     # Generate ID if not present
     if "id" not in data:
         data["id"] = f"{key}-{len(existing)}"
-    
+
     # Append
     existing.append(data)
-    
+
     # Write back
     try:
         with open(memory_file, "w") as f:
@@ -126,7 +128,7 @@ def append_memory(key: str, data: dict) -> str:
 @tool
 def get_memory_metrics() -> str:
     """Get aggregated metrics from memory.
-    
+
     Returns:
         JSON string with metrics
     """
@@ -136,7 +138,7 @@ def get_memory_metrics() -> str:
         "failed": 0,
         "needs_review": 0,
     }
-    
+
     # Read upgrades
     upgrades_json = read_memory.invoke("upgrades")
     try:
@@ -147,5 +149,5 @@ def get_memory_metrics() -> str:
             metrics["failed"] = sum(1 for u in upgrades if not u.get("success"))
     except:
         pass
-    
+
     return json.dumps(metrics)

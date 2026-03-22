@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Monitor | Dashboard</title>
     <meta name="description" content="Monitor your system and AI agents in one beautiful dashboard">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+
     <style>
         /* ========================================
            CSS CUSTOM PROPERTIES
@@ -33,22 +33,22 @@
             --error: #ef4444;
             --warning: #f59e0b;
             --info: #3b82f6;
-            
+
             /* Text */
             --text-primary: #ffffff;
             --text-secondary: #94a3b8;
             --text-muted: #64748b;
-            
+
             /* Glass */
             --glass-bg: rgba(255, 255, 255, 0.08);
             --glass-border: rgba(255, 255, 255, 0.12);
             --glass-hover: rgba(255, 255, 255, 0.12);
-            
+
             /* Typography */
             --font-heading: 'Outfit', sans-serif;
             --font-body: 'DM Sans', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            
+
             /* Spacing */
             --space-xs: 0.25rem;
             --space-sm: 0.5rem;
@@ -56,12 +56,12 @@
             --space-lg: 1.5rem;
             --space-xl: 2rem;
             --space-2xl: 3rem;
-            
+
             /* Transitions */
             --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
             --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-            
+
             /* Border Radius */
             --radius-sm: 8px;
             --radius-md: 16px;
@@ -388,7 +388,7 @@
         .agent-card:focus-visible {
             background: var(--glass-hover);
             transform: translateY(-8px) perspective(1000px) rotateX(2deg);
-            box-shadow: 
+            box-shadow:
                 0 25px 50px -12px rgba(0, 0, 0, 0.4),
                 0 0 30px rgba(139, 92, 246, 0.15);
         }
@@ -603,9 +603,9 @@
            LOADING STATES - SKELETON
            ======================================== */
         .skeleton {
-            background: linear-gradient(90deg, 
-                var(--glass-bg) 25%, 
-                rgba(255, 255, 255, 0.1) 50%, 
+            background: linear-gradient(90deg,
+                var(--glass-bg) 25%,
+                rgba(255, 255, 255, 0.1) 50%,
                 var(--glass-bg) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
@@ -901,11 +901,11 @@
         }
 
         function formatTime(date) {
-            return date.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
+            return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: false 
+                hour12: false
             });
         }
 
@@ -944,7 +944,7 @@
             console.log('[DEBUG] getStatusClasses called with:', status);
             const statusMap = {
                 'success': 'status-success',
-                'error': 'status-error', 
+                'error': 'status-error',
                 'failure': 'status-error',
                 'running': 'status-running'
             };
@@ -967,10 +967,10 @@
             const statusClass = getStatusClasses(agent.status);
             const statusIcon = getStatusIcon(agent.status);
             const isExternal = agent.link && agent.link.startsWith('http');
-            
-            const clickHandler = isExternal 
+
+            const clickHandler = isExternal
                 ? `window.open('${agent.link}', '_blank')`
-                : agent.link 
+                : agent.link
                     ? `window.location.href='${agent.link}'`
                     : '';
 
@@ -980,7 +980,7 @@
             card.setAttribute('tabindex', '0');
             card.setAttribute('aria-label', `${agent.name}, status: ${agent.status}`);
             card.style.animationDelay = `${index * 100}ms`;
-            
+
             if (clickHandler) {
                 card.onclick = new Function(clickHandler);
                 card.onkeydown = (e) => {
@@ -991,11 +991,11 @@
                 };
             }
 
-            const iconHtml = agent.icon === 'langfuse' 
-                ? `<img src="/static/assets/logos/langfuse.png" alt="Langfuse" style="width: 2rem; height: 2rem;">` 
+            const iconHtml = agent.icon === 'langfuse'
+                ? `<img src="/static/assets/logos/langfuse.png" alt="Langfuse" style="width: 2rem; height: 2rem;">`
                 : (agent.icon || '🤖');
 
-            const lastRunHtml = agent.last_run 
+            const lastRunHtml = agent.last_run
                 ? `<span>Last run: ${agent.last_run}</span>`
                 : (agent.type === 'ai' ? `<span>Status: ${agent.status}</span>` : `<span>Never</span>`);
 
@@ -1024,13 +1024,13 @@
             const container = document.getElementById('agents-container');
             const skeletonLoader = document.getElementById('skeleton-loader');
             const errorBanner = document.getElementById('error-banner');
-            
+
             // DEBUG: Log agents being rendered
             console.log('[DEBUG] renderAgents called with:', agents);
-            
+
             // Hide skeleton
             if (skeletonLoader) skeletonLoader.style.display = 'none';
-            
+
             // Clear container
             container.innerHTML = '';
             container.setAttribute('aria-busy', 'false');
@@ -1049,7 +1049,7 @@
             // Group agents by type
             const systemAgents = agents.filter(a => a.type === 'system' || !a.type);
             const aiAgents = agents.filter(a => a.type === 'ai');
-            
+
             let html = '';
 
             if (systemAgents.length > 0) {
@@ -1078,7 +1078,7 @@
             }
 
             container.innerHTML = html;
-            
+
             // Attach click handlers after rendering
             attachCardHandlers(agents);
         }
@@ -1087,28 +1087,28 @@
             const statusClass = getStatusClasses(agent.status);
             const statusIcon = getStatusIcon(agent.status);
             const isExternal = agent.link && agent.link.startsWith('http');
-            const clickAction = isExternal 
+            const clickAction = isExternal
                 ? `window.open('${agent.link}', '_blank')`
-                : agent.link 
+                : agent.link
                     ? `window.location.href='${agent.link}'`
                     : '';
-            
+
             const card = document.createElement('div');
             card.className = 'agent-card';
             card.setAttribute('role', 'button');
             card.setAttribute('tabindex', '0');
             card.setAttribute('aria-label', `${agent.name}, status: ${agent.status}`);
             card.style.animationDelay = `${index * 100}ms`;
-            
+
             if (clickAction) {
                 card.dataset.click = clickAction;
             }
-            
-            const iconHtml = agent.icon === 'langfuse' 
-                ? `<img src="/static/assets/logos/langfuse.png" alt="Langfuse" style="width: 2rem; height: 2rem;">` 
+
+            const iconHtml = agent.icon === 'langfuse'
+                ? `<img src="/static/assets/logos/langfuse.png" alt="Langfuse" style="width: 2rem; height: 2rem;">`
                 : (agent.icon || '🤖');
 
-            const lastRunHtml = agent.last_run 
+            const lastRunHtml = agent.last_run
                 ? `<span>Last run: ${agent.last_run}</span>`
                 : (agent.type === 'ai' ? `<span>Status: ${agent.status}</span>` : `<span>Never</span>`);
 
@@ -1152,9 +1152,9 @@
             const errorBanner = document.getElementById('error-banner');
             const errorMessage = document.getElementById('error-message');
             const skeletonLoader = document.getElementById('skeleton-loader');
-            
+
             if (skeletonLoader) skeletonLoader.style.display = 'none';
-            
+
             if (message) {
                 errorMessage.textContent = message;
             }
@@ -1167,28 +1167,28 @@
         async function fetchAgents() {
             try {
                 const response = await fetch('/api/agents');
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
+
                 const agents = await response.json();
-                
+
                 // DEBUG: Log raw API response
                 console.log('[DEBUG] API Response:', agents);
-                
+
                 // Cache the data
                 cachedAgents = agents;
                 localStorage.setItem('cachedAgents', JSON.stringify(agents));
-                
+
                 // Hide any error banner
                 document.getElementById('error-banner').style.display = 'none';
-                
+
                 renderAgents(agents);
-                
+
             } catch (error) {
                 console.error('Failed to fetch agents:', error);
-                
+
                 // Try to use cached data
                 const cached = localStorage.getItem('cachedAgents');
                 if (cached) {
@@ -1211,10 +1211,10 @@
             // Show skeleton while loading
             const skeletonLoader = document.getElementById('skeleton-loader');
             const container = document.getElementById('agents-container');
-            
+
             if (skeletonLoader) skeletonLoader.style.display = 'block';
             container.innerHTML = '';
-            
+
             fetchAgents();
         }
 
@@ -1251,7 +1251,7 @@
             document.addEventListener('touchend', (e) => {
                 const touchEndY = e.changedTouches[0].clientY;
                 const diff = touchStartY - touchEndY;
-                
+
                 // Pull down gesture (swipe up = negative diff)
                 if (diff < -50 && window.scrollY === 0) {
                     debouncedRefresh();

@@ -5,39 +5,39 @@
       <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
     </linearGradient>
   </defs>
-  
+
   <!-- Background -->
   <rect width="200" height="200" fill="#0f0c29" rx="40"/>
-  
+
   <!-- Robot Icon (stylized, matching the navbar logo) -->
   <g fill="url(#logoGradient)">
     <!-- Head -->
     <rect x="60" y="40" width="80" height="70" rx="8"/>
-    
+
     <!-- Left Eye -->
     <circle cx="75" cy="60" r="8"/>
-    
+
     <!-- Right Eye -->
     <circle cx="125" cy="60" r="8"/>
-    
+
     <!-- Antenna left -->
     <rect x="70" y="25" width="6" height="20" rx="3"/>
-    
+
     <!-- Antenna right -->
     <rect x="124" y="25" width="6" height="20" rx="3"/>
-    
+
     <!-- Body -->
     <rect x="55" y="115" width="90" height="65" rx="8"/>
-    
+
     <!-- Left Arm -->
     <rect x="30" y="125" width="25" height="45" rx="8"/>
-    
+
     <!-- Right Arm -->
     <rect x="145" y="125" width="25" height="45" rx="8"/>
-    
+
     <!-- Left Foot -->
     <rect x="65" y="185" width="20" height="12" rx="3"/>
-    
+
     <!-- Right Foot -->
     <rect x="115" y="185" width="20" height="12" rx="3"/>
   </g>

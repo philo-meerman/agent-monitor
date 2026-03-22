@@ -1,5 +1,4 @@
 """Upgrade Agent - LLM Prompts"""
-from typing import Optional
 
 
 REASONING_PROMPT = """You are analyzing whether to upgrade a dependency.
@@ -174,11 +173,13 @@ def build_pr_body(
     review_needed: str,
 ) -> str:
     """Build the PR body with decision log."""
-    decisions_md = "\n".join([
-        f"| {d.get('decision', '')} | {d.get('reasoning', '')} | {'⚠️ YES' if d.get('needs_approval') else 'No'} |"
-        for d in decisions
-    ])
-    
+    decisions_md = "\n".join(
+        [
+            f"| {d.get('decision', '')} | {d.get('reasoning', '')} | {'⚠️ YES' if d.get('needs_approval') else 'No'} |"
+            for d in decisions
+        ]
+    )
+
     return PR_BODY_TEMPLATE.format(
         name=name,
         from_version=from_version,

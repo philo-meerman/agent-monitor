@@ -8,8 +8,8 @@ echo "Installing pre-commit hooks..."
 
 # Check if brew is available
 if ! command -v brew &> /dev/null; then
-    echo "Error: Homebrew is required. Install from https://brew.sh"
-    exit 1
+  echo "Error: Homebrew is required. Install from https://brew.sh"
+  exit 1
 fi
 
 # Install tools
@@ -19,9 +19,9 @@ brew install pre-commit gitleaks shellcheck shfmt || true
 # Install Python dependencies
 echo "Installing Python dependencies..."
 if command -v python3.11 &> /dev/null; then
-    python3.11 -m venv .venv
+  python3.11 -m venv .venv
 else
-    python3 -m venv .venv
+  python3 -m venv .venv
 fi
 
 source .venv/bin/activate

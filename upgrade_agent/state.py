@@ -1,4 +1,5 @@
 """Upgrade Agent - State Models"""
+
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
@@ -8,12 +9,14 @@ from pydantic import BaseModel, Field
 
 class UpdateType(str, Enum):
     """Type of dependency update."""
+
     PYTHON_PACKAGE = "python_package"
     DOCKER_IMAGE = "docker_image"
 
 
 class VersionBump(str, Enum):
     """Type of version bump."""
+
     MAJOR = "major"
     MINOR = "minor"
     PATCH = "patch"
@@ -22,6 +25,7 @@ class VersionBump(str, Enum):
 
 class UpdateStatus(str, Enum):
     """Status of an update attempt."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     SUCCESS = "success"
@@ -32,6 +36,7 @@ class UpdateStatus(str, Enum):
 
 class Dependency(BaseModel):
     """A dependency to track."""
+
     name: str
     current_version: str
     repo: str
@@ -41,6 +46,7 @@ class Dependency(BaseModel):
 
 class AvailableUpdate(BaseModel):
     """An available update for a dependency."""
+
     dependency: Dependency
     latest_version: str
     version_bump: VersionBump
@@ -50,6 +56,7 @@ class AvailableUpdate(BaseModel):
 
 class UpdateAttempt(BaseModel):
     """An attempt to upgrade a dependency."""
+
     update: AvailableUpdate
     attempt_number: int = 0
     status: UpdateStatus = UpdateStatus.PENDING
@@ -64,6 +71,7 @@ class UpdateAttempt(BaseModel):
 
 class Decision(BaseModel):
     """A decision made by the agent."""
+
     decision: str
     reasoning: str
     approved_by_human: Optional[bool] = None
@@ -72,6 +80,7 @@ class Decision(BaseModel):
 
 class TraceEvent(BaseModel):
     """An event for LangFuse tracing."""
+
     timestamp: datetime = Field(default_factory=datetime.now)
     event_type: str
     node: str
@@ -80,6 +89,7 @@ class TraceEvent(BaseModel):
 
 class Memory(BaseModel):
     """Agent memory of past upgrades."""
+
     past_upgrades: dict[str, dict] = Field(default_factory=dict)
     known_errors: dict[str, dict] = Field(default_factory=dict)
     decisions: dict[str, dict] = Field(default_factory=dict)

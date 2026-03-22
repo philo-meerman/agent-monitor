@@ -1,10 +1,11 @@
 """Upgrade Agent - Rate Limiter for Gemini API"""
+
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from threading import Lock
 from typing import Optional
 
-from .constants import RPM_LIMIT, MAX_LLM_CALLS_PER_DAY
+from .constants import MAX_LLM_CALLS_PER_DAY, RPM_LIMIT
 
 
 class RateLimiter:
@@ -80,7 +81,8 @@ class RateLimiter:
                 "rpm_limit": self.rpm,
                 "daily_used": self.daily_count,
                 "daily_limit": self.max_daily,
-                "in_backoff": self.backoff_until is not None and now < self.backoff_until,
+                "in_backoff": self.backoff_until is not None
+                and now < self.backoff_until,
             }
 
 

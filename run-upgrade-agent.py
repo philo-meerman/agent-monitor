@@ -1,6 +1,7 @@
 """Run the upgrade agent."""
-import sys
+
 import os
+import sys
 
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,25 +15,25 @@ def main():
     print("=" * 50)
     print("Upgrade Agent - Starting")
     print("=" * 50)
-    
+
     # Validate config
     missing = validate_config()
     if missing:
-        print(f"ERROR: Missing required environment variables:")
+        print("ERROR: Missing required environment variables:")
         for var in missing:
             print(f"  - {var}")
         print("\nPlease copy .env.example to .env and fill in the values.")
         sys.exit(1)
-    
+
     # Run agent
     print("\nRunning upgrade agent...\n")
     result = run_upgrade_agent_sync()
-    
+
     print("\n" + "=" * 50)
     print("Upgrade Agent - Complete")
     print("=" * 50)
     print(f"Result: {result}")
-    
+
     return result
 
 
