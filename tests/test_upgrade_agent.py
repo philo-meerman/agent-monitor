@@ -1,6 +1,5 @@
 """Tests for upgrade agent."""
 
-
 from upgrade_agent.constants import MAX_ATTEMPTS_PER_ISSUE, RPM_LIMIT
 from upgrade_agent.rate_limiter import RateLimiter
 from upgrade_agent.state import (

@@ -1,6 +1,5 @@
 """Upgrade Agent - LLM Prompts"""
 
-
 REASONING_PROMPT = """You are analyzing whether to upgrade a dependency.
 
 Dependency: {name}

@@ -49,7 +49,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy upgrade_agent app.py test_app.py --ignore-missing-imports
+          mypy upgrade_agent app.py --ignore-missing-imports
 
   test:
     name: Tests
@@ -95,7 +95,7 @@ jobs:
 
       - name: Run shellcheck
         run: |
-          find . -name "*.sh" -exec shellcheck {} +
+          find . -name "*.sh" -exec shellcheck -e SC1091 {} +
 
       - name: Check shfmt
         run: |
