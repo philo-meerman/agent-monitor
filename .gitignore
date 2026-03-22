@@ -6,3 +6,10 @@ venv/
 env/
 *.log
 .DS_Store
+
+# Secrets
+.env
+.env.local
+
+# Agent memory
+memory/
