@@ -74,6 +74,7 @@ class TestLangfuseStatusIntegration(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
 
+    @unittest.skipIf(os.environ.get("CI") == "true", "Requires Docker/Langfuse running")
     def test_langfuse_status_in_api_response(self):
         """
         Integration test: When /api/agents is called, Langfuse status should be 'running'.
@@ -81,12 +82,6 @@ class TestLangfuseStatusIntegration(unittest.TestCase):
         This test catches the bug where Docker is not accessible in the server context,
         causing the status to return 'unknown' instead of 'running'.
         """
-        import subprocess
-
-        try:
-            subprocess.run(["docker", "info"], capture_output=True, check=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            self.skipTest("Docker not available, skipping test")
         response = self.app.get("/api/agents")
         self.assertEqual(response.status_code, 200)
 
