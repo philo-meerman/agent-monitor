@@ -13,3 +13,9 @@ env/
 
 # Agent memory
 memory/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

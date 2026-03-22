@@ -1,0 +1,5 @@
+# Development dependencies for pre-commit hooks
+# Install with: pip install -r requirements-dev.txt
+pre-commit>=3.0.0
+ruff>=0.1.0
+mypy>=1.8.0

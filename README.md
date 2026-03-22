@@ -102,18 +102,62 @@ export LANGFUSE_SECRET_KEY="your-secret-key"
 ```
 agent-monitor/
 ├── app.py                      # Flask backend
-├── requirements.txt            # Python dependencies
-├── run-dashboard.sh            # Dashboard runner script
+├── test_app.py                 # Flask app tests
+├── requirements.txt            # Production dependencies
+├── requirements-dev.txt        # Development dependencies
+├── pyproject.toml             # Ruff + mypy configuration
+├── .editorconfig              # Code style configuration
+├── .pre-commit-config.yaml   # Pre-commit hooks
+├── .github/workflows/ci.yml   # GitHub Actions CI
+├── run-dashboard.sh           # Dashboard runner script
 ├── setup-langfuse.sh          # Langfuse setup script
-├── README.md                   # This file
-├── launchd/
-│   └── com.user.agent-dashboard.plist  # Auto-start agent
-└── templates/
-    ├── index.html              # Dashboard UI
-    └── logs.html               # Log viewer UI
+├── scripts/
+│   └── setup-hooks.sh          # Dev environment setup
+├── tests/
+│   ├── conftest.py             # Pytest fixtures
+│   └── test_upgrade_agent.py   # Agent tests
+├── upgrade_agent/              # Upgrade agent module
+├── templates/
+│   ├── index.html              # Dashboard UI
+│   └── logs.html               # Log viewer UI
+└── .vscode/
+    ├── settings.json           # VS Code settings
+    └── extensions.json         # Recommended extensions
 ```
 
+## Development
+
+### Quick Start
+
+```bash
+# Clone and setup
+git clone https://github.com/philo-meerman/agent-monitor.git
+cd agent-monitor
+./scripts/setup-hooks.sh
+
+# Activate environment
+source .venv/bin/activate
+
+# Run tests
+pytest tests/ test_app.py -v
+
+# Run dashboard
+python app.py
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup instructions.
+
 ## Troubleshooting
+
+### Pre-commit Hooks Failing
+
+```bash
+# Update hook versions
+pre-commit autoupdate
+
+# Run manually to debug
+pre-commit run --all-files -v
+```
 
 ### Dashboard not starting
 
@@ -132,14 +176,20 @@ cat ~/.agent-dashboard.log
 docker info
 
 # Check Langfuse logs
-cd ../langfuse
 docker compose -f docker-compose.v3.yml logs -f
 ```
 
-### Agents not showing
+### Tests Failing
 
-- Ensure your agent scripts write to log files
-- Check log file format matches the parser in `app.py`
+```bash
+# Run with verbose output
+pytest tests/ test_app.py -v
+
+# Run specific test
+pytest tests/test_upgrade_agent.py::test_name -v
+```
+
+For more help, see [CONTRIBUTING.md](CONTRIBUTING.md#troubleshooting).
 
 ## License
 

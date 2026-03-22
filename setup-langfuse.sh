@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 echo "Setting up Langfuse v3 for AI agent observability..."
 
