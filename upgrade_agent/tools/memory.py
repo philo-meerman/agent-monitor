@@ -18,7 +18,7 @@ from upgrade_agent.constants import MEMORY_DIR
 
 def get_memory_file(filename: str) -> Path:
     """Get path to memory file."""
-    return MEMORY_DIR / filename
+    return Path(MEMORY_DIR) / filename
 
 
 @tool
@@ -63,7 +63,7 @@ def write_memory(key: str, data: dict) -> str:
         try:
             with open(memory_file) as f:
                 existing = json.load(f)
-        except:
+        except Exception:
             pass
 
     # Merge data
@@ -102,7 +102,7 @@ def append_memory(key: str, data: dict) -> str:
                 existing = json.load(f)
                 if not isinstance(existing, list):
                     existing = [existing]
-        except:
+        except Exception:
             existing = []
 
     # Add timestamp if not present
@@ -147,7 +147,7 @@ def get_memory_metrics() -> str:
             metrics["total_upgrades"] = len(upgrades)
             metrics["successful"] = sum(1 for u in upgrades if u.get("success"))
             metrics["failed"] = sum(1 for u in upgrades if not u.get("success"))
-    except:
+    except Exception:
         pass
 
     return json.dumps(metrics)

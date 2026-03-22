@@ -3,6 +3,7 @@
 import json
 import os
 import sys
+from typing import Optional
 
 # Add parent to path
 sys.path.insert(
@@ -143,7 +144,7 @@ def github_update_file(
     content: str,
     message: str,
     branch: str,
-    sha: str = None,
+    sha: Optional[str] = None,
 ) -> str:
     """Update or create a file in the repository.
 

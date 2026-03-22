@@ -4,6 +4,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from typing import Optional
 
 # Add parent to path
 sys.path.insert(
@@ -44,7 +45,7 @@ def get_langfuse_client():
 
 
 @tool
-def log_trace_start(name: str, metadata: dict = None) -> str:
+def log_trace_start(name: str, metadata: Optional[dict] = None) -> str:
     """Start a new LangFuse trace.
 
     Args:
@@ -77,9 +78,9 @@ def log_trace_start(name: str, metadata: dict = None) -> str:
 def log_span(
     trace_id: str,
     name: str,
-    input_data: dict = None,
-    output_data: dict = None,
-    metadata: dict = None,
+    input_data: Optional[dict] = None,
+    output_data: Optional[dict] = None,
+    metadata: Optional[dict] = None,
 ) -> str:
     """Log a span to LangFuse.
 
@@ -122,7 +123,7 @@ def log_generation(
     model: str,
     prompt: str,
     completion: str,
-    metadata: dict = None,
+    metadata: Optional[dict] = None,
 ) -> str:
     """Log an LLM generation to LangFuse.
 
@@ -208,7 +209,7 @@ def log_upgrade_result(
     from_version: str,
     to_version: str,
     success: bool,
-    error: str = None,
+    error: Optional[str] = None,
 ) -> str:
     """Log an upgrade result to LangFuse.
 

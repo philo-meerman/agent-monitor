@@ -86,7 +86,7 @@ def parse_timestamp(timestamp_str):
     """Convert timestamp string to ISO format datetime object."""
     try:
         return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-    except:
+    except Exception:
         return datetime.now()
 
 
@@ -392,7 +392,7 @@ def parse_brew_events(log_lines=None):
             stages = []
             stage_names = ["update", "upgrade", "cleanup"]
             for stage_name in stage_names:
-                stage_lines = [l for l in group if stage_name in l.lower()]
+                stage_lines = [line for line in group if stage_name in line.lower()]
                 stage_raw = "\n".join(stage_lines)
 
                 # Determine stage status
@@ -766,8 +766,6 @@ def logs():
 @app.route("/api/agents")
 def get_agents():
     """Return JSON with agent statuses."""
-    agents = parse_agents_from_logs()
-
     # Check Langfuse Docker status
     langfuse_status = check_langfuse_status()
 

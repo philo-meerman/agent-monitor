@@ -76,29 +76,29 @@ class TestRateLimiter:
     def test_acquire_first_request(self):
         """Test first request is allowed."""
         limiter = RateLimiter(rpm=5, max_daily=100)
-        assert limiter.acquire() == True
+        assert limiter.acquire()
 
     def test_rpm_limit_enforced(self):
         """Test RPM limit is enforced."""
         limiter = RateLimiter(rpm=2, max_daily=100)
 
         # First two should succeed
-        assert limiter.acquire() == True
-        assert limiter.acquire() == True
+        assert limiter.acquire()
+        assert limiter.acquire()
 
         # Third should fail (rate limited)
-        assert limiter.acquire() == False
+        assert not limiter.acquire()
 
     def test_daily_limit_enforced(self):
         """Test daily limit is enforced."""
         limiter = RateLimiter(rpm=10, max_daily=2)
 
         # First two should succeed
-        assert limiter.acquire() == True
-        assert limiter.acquire() == True
+        assert limiter.acquire()
+        assert limiter.acquire()
 
         # Third should fail (daily limit)
-        assert limiter.acquire() == False
+        assert not limiter.acquire()
 
     def test_status(self):
         """Test getting status."""

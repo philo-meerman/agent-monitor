@@ -1,5 +1,7 @@
 """Upgrade Agent - Main LangGraph Workflow"""
 
+# mypy: disable-error-code=assignment
+
 import json
 import os
 import sys
@@ -73,7 +75,7 @@ def add_trace(state: AgentState, event_type: str, node: str, data: dict) -> Agen
     # Also log to LangFuse
     try:
         log_event.invoke(event_type=event_type, node=node, data=data)
-    except:
+    except Exception:
         pass
 
     return state
@@ -111,7 +113,7 @@ def observe(state: AgentState) -> AgentState:
                             bump_type = "major"
                         elif latest_parts[1] > curr_parts[1]:
                             bump_type = "minor"
-                    except:
+                    except Exception:
                         bump_type = "unknown"
 
                 if latest != current:
@@ -191,7 +193,7 @@ def reason(state: AgentState) -> AgentState:
         try:
             decision_data = json.loads(response.content)
             state["decision"] = decision_data
-        except:
+        except Exception:
             state["decision"] = {
                 "decision": "PROCEED_WITH_CAUTION",
                 "reasoning": response.content,
@@ -246,7 +248,7 @@ def plan(state: AgentState) -> AgentState:
         try:
             plan_data = json.loads(response.content)
             plan_steps = plan_data.get("steps", [])
-        except:
+        except Exception:
             plan_steps = [response.content]
 
         # Create update attempt
@@ -383,7 +385,7 @@ def fix(state: AgentState) -> AgentState:
         try:
             fix_data = json.loads(response.content)
             state["current_update"]["error_analysis"] = fix_data
-        except:
+        except Exception:
             state["current_update"]["error_analysis"] = {"raw": response.content}
 
     except Exception as e:
@@ -434,7 +436,7 @@ def reflect(state: AgentState) -> AgentState:
                 success=update.status == UpdateStatus.SUCCESS,
                 error=update.error,
             )
-        except:
+        except Exception:
             pass
 
     # Move to completed

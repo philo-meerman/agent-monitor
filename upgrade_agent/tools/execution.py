@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Add parent to path
 sys.path.insert(
@@ -17,7 +18,7 @@ from upgrade_agent.config import PROJECT_DIR
 
 
 @tool
-def run_tests(path: str = None, verbose: bool = True) -> str:
+def run_tests(path: Optional[str] = None, verbose: bool = True) -> str:
     """Run pytest tests and return results.
 
     Args:
@@ -79,7 +80,9 @@ def run_tests(path: str = None, verbose: bool = True) -> str:
 
 
 @tool
-def run_command(command: list[str], cwd: str = None, timeout: int = 60) -> str:
+def run_command(
+    command: list[str], cwd: Optional[str] = None, timeout: int = 60
+) -> str:
     """Run a shell command and return the result.
 
     Args:
