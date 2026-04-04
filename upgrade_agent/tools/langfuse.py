@@ -14,6 +14,7 @@ sys.path.insert(
 from langchain_core.tools import tool
 
 from upgrade_agent.config import (
+    GITHUB_REPO,
     LANGFUSE_HOST,
     LANGFUSE_PUBLIC_KEY,
     LANGFUSE_SECRET_KEY,
@@ -21,6 +22,12 @@ from upgrade_agent.config import (
 
 # Global LangFuse client (lazy initialized)
 _langfuse_client = None
+_trigger_type = "manual"
+
+
+def get_trigger_type() -> str:
+    """Get the trigger type from environment or default."""
+    return os.getenv("TRIGGER_TYPE", "manual")
 
 
 def get_langfuse_client():
@@ -164,6 +171,7 @@ def log_event(
     event_type: str,
     node: str,
     data: dict,
+    trigger_type: Optional[str] = None,
 ) -> str:
     """Log a generic event to LangFuse.
 
@@ -171,6 +179,7 @@ def log_event(
         event_type: Type of event
         node: Node/agent component
         data: Event data
+        trigger_type: Trigger source (webhook/manual). Defaults to TRIGGER_TYPE env var.
 
     Returns:
         JSON string with success status
@@ -179,12 +188,21 @@ def log_event(
     if not client:
         return json.dumps({"success": False, "error": "LangFuse not configured"})
 
+    trigger = trigger_type or get_trigger_type()
+
     try:
         # Create a trace for the daily run if it doesn't exist
         today = datetime.now().strftime("%Y-%m-%d")
         trace_name = f"upgrade-agent-{today}"
 
-        trace = client.trace(name=trace_name)
+        trace = client.trace(
+            name=trace_name,
+            metadata={
+                "trigger_type": trigger,
+                "repository": GITHUB_REPO,
+                "node": node,
+            },
+        )
 
         # Add a span for this event
         trace.span(
@@ -197,6 +215,7 @@ def log_event(
             {
                 "success": True,
                 "trace_id": trace.id,
+                "trigger_type": trigger,
             }
         )
     except Exception as e:
@@ -210,6 +229,7 @@ def log_upgrade_result(
     to_version: str,
     success: bool,
     error: Optional[str] = None,
+    trigger_type: Optional[str] = None,
 ) -> str:
     """Log an upgrade result to LangFuse.
 
@@ -219,6 +239,7 @@ def log_upgrade_result(
         to_version: New version
         success: Whether upgrade succeeded
         error: Error message if failed
+        trigger_type: Trigger source (webhook/manual). Defaults to TRIGGER_TYPE env var.
 
     Returns:
         JSON string with success status
@@ -227,17 +248,27 @@ def log_upgrade_result(
     if not client:
         return json.dumps({"success": False, "error": "LangFuse not configured"})
 
+    trigger = trigger_type or get_trigger_type()
+
     try:
         today = datetime.now().strftime("%Y-%m-%d")
         trace_name = f"upgrade-agent-{today}"
 
-        trace = client.trace(name=trace_name)
+        trace = client.trace(
+            name=trace_name,
+            metadata={
+                "trigger_type": trigger,
+                "repository": GITHUB_REPO,
+            },
+        )
 
         trace.generation(
             model="upgrade-agent",
             prompt=f"Upgrade {dependency} from {from_version} to {to_version}",
             completion=f"Success: {success}" + (f", Error: {error}" if error else ""),
             metadata={
+                "trigger_type": trigger,
+                "repository": GITHUB_REPO,
                 "dependency": dependency,
                 "from_version": from_version,
                 "to_version": to_version,
@@ -246,6 +277,6 @@ def log_upgrade_result(
             },
         )
 
-        return json.dumps({"success": True})
+        return json.dumps({"success": True, "trigger_type": trigger})
     except Exception as e:
         return json.dumps({"success": False, "error": str(e)})
