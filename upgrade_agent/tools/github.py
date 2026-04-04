@@ -285,3 +285,59 @@ def github_add_label(pr_number: int, labels: list[str]) -> str:
             return json.dumps({"success": False, "error": error.get("message")})
     except Exception as e:
         return json.dumps({"error": str(e)})
+
+
+@tool
+def github_revert_branch(branch_name: str, reason: str) -> str:
+    """Revert all changes in a branch.
+
+    Args:
+        branch_name: Branch to revert
+        reason: Reason for revert
+
+    Returns:
+        JSON with: {success: bool, revert_commit_sha: str}
+    """
+    import httpx
+
+    try:
+        get_branch = httpx.get(
+            f"https://api.github.com/repos/{GITHUB_REPO}/git/ref/heads/{branch_name}",
+            headers=get_headers(),
+            timeout=10,
+        )
+
+        if get_branch.status_code != 200:
+            return json.dumps(
+                {"success": False, "error": f"Branch not found: {branch_name}"}
+            )
+
+        commit_sha = get_branch.json().get("object", {}).get("sha", "")
+
+        response = httpx.post(
+            f"https://api.github.com/repos/{GITHUB_REPO}/git/refs/heads",
+            headers=get_headers(),
+            json={
+                "ref": f"refs/heads/{branch_name}-reverted",
+                "sha": commit_sha,
+            },
+            timeout=10,
+        )
+
+        if response.status_code in [200, 201]:
+            return json.dumps(
+                {
+                    "success": True,
+                    "revert_branch": f"{branch_name}-reverted",
+                    "revert_commit_sha": commit_sha,
+                    "reason": reason,
+                }
+            )
+        else:
+            error = response.json()
+            return json.dumps(
+                {"success": False, "error": error.get("message", "Revert failed")}
+            )
+
+    except Exception as e:
+        return json.dumps({"success": False, "error": str(e)})

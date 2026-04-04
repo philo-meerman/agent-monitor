@@ -17,6 +17,8 @@ from langgraph.graph.state import CompiledStateGraph
 
 from upgrade_agent.config import GEMINI_API_KEY, GEMINI_MODEL, validate_config
 from upgrade_agent.constants import MAX_ATTEMPTS_PER_ISSUE
+from upgrade_agent.decision.risk_scorer import calculate_risk_score
+from upgrade_agent.decision.test_coverage import get_test_coverage_for_vulnerabilities
 from upgrade_agent.prompts.reason import (
     build_error_analysis_prompt,
     build_planning_prompt,
@@ -31,6 +33,9 @@ from upgrade_agent.state import (
     UpdateAttempt,
     UpdateStatus,
 )
+from upgrade_agent.tools.advisory import (
+    get_vulnerability_scan,
+)
 from upgrade_agent.tools.dependencies import (
     check_dockerhub_version,
     check_pypi_version,
@@ -39,10 +44,13 @@ from upgrade_agent.tools.dependencies import (
 from upgrade_agent.tools.execution import run_tests
 from upgrade_agent.tools.github import (
     github_create_branch,
+    github_revert_branch,
     github_update_file,
 )
+from upgrade_agent.tools.health_checker import run_health_check_suite
 from upgrade_agent.tools.langfuse import log_event, log_upgrade_result
 from upgrade_agent.tools.memory import append_memory, read_memory
+from upgrade_agent.tools.state_recovery import restore_working_state
 
 # Initialize LLM
 llm = None
@@ -142,6 +150,15 @@ def observe(state: AgentState) -> AgentState:
                     available_updates.append(update)
 
     state["available_updates"] = available_updates
+
+    # Scan for vulnerabilities
+    try:
+        vuln_scan_result = get_vulnerability_scan.invoke({})
+        vuln_data = json.loads(vuln_scan_result)
+        state["vulnerabilities"] = vuln_data.get("vulnerabilities", [])
+    except Exception:
+        state["vulnerabilities"] = []
+
     add_trace(
         state,
         "observe_complete",
@@ -155,7 +172,86 @@ def observe(state: AgentState) -> AgentState:
     return state
 
 
-def reason(state: AgentState) -> AgentState:
+def decide(state: AgentState) -> AgentState:
+    """Decision node - evaluate whether to auto-upgrade or request review based on vulnerabilities."""
+    state = dict(state)
+
+    # Get vulnerabilities from observe step
+    vulnerabilities = state.get("vulnerabilities", [])
+
+    if not vulnerabilities:
+        state["decisions"] = []
+        state["should_proceed"] = True
+        return state
+
+    # Get test coverage for affected packages
+    packages = [v.get("package", "") for v in vulnerabilities if v.get("package")]
+    if packages:
+        coverage_result = get_test_coverage_for_vulnerabilities.invoke(
+            json.dumps(packages)
+        )
+        coverage_data = json.loads(coverage_result)
+        state["test_coverage"] = coverage_data.get("coverage", {})
+
+    # Make decisions for each vulnerability
+    decisions = []
+    has_block = False
+    has_review = False
+
+    for vuln in vulnerabilities:
+        severity = vuln.get("severity", "UNKNOWN")
+        version_bump = vuln.get("version_bump", "minor")
+        test_coverage = state.get("test_coverage", {}).get("coverage_score", 0.5)
+        is_direct = vuln.get("is_direct", True)
+
+        score_result = calculate_risk_score(
+            cve_severity=severity,
+            version_bump=version_bump,
+            test_coverage=test_coverage,
+            is_direct_dependency=is_direct,
+            has_known_fix=True,
+        )
+
+        decision = {
+            "vulnerability_id": vuln.get("id", ""),
+            "package": vuln.get("package", ""),
+            "severity": severity,
+            "score": score_result["score"],
+            "risk_level": score_result["risk_level"],
+            "recommendation": score_result["recommendation"],
+            "reasoning": score_result["reasoning"],
+        }
+        decisions.append(decision)
+
+        if score_result["recommendation"] == "BLOCK":
+            has_block = True
+        elif score_result["recommendation"] == "REQUEST_REVIEW":
+            has_review = True
+
+    state["decisions"] = decisions
+
+    if has_block:
+        state["should_proceed"] = False
+        state["requires_human_review"] = True
+    elif has_review:
+        state["should_proceed"] = True
+        state["requires_human_review"] = True
+    else:
+        state["should_proceed"] = True
+        state["requires_human_review"] = False
+
+    add_trace(
+        state,
+        "decide_complete",
+        "decide",
+        {
+            "decisions": decisions,
+            "should_proceed": state["should_proceed"],
+            "requires_human_review": state.get("requires_human_review", False),
+        },
+    )
+
+    return state
     """Reason about whether to upgrade."""
     state = dict(state)
 
@@ -473,6 +569,78 @@ def should_continue(state: AgentState) -> Literal["fix", "reflect", "end"]:
     return "fix"
 
 
+def verify(state: AgentState) -> AgentState:
+    """Verify the upgrade was successful."""
+    state = dict(state)
+
+    if not state.get("current_update"):
+        return state
+
+    health_result = json.loads(run_health_check_suite.invoke({}))
+    state["current_update"]["health_check"] = health_result
+
+    all_passed = health_result.get("success", False) and state["current_update"].get(
+        "test_results", {}
+    ).get("success", False)
+
+    if not all_passed:
+        state["current_update"]["status"] = UpdateStatus.FAILED
+        state["verification_failed"] = True
+    else:
+        state["current_update"]["status"] = UpdateStatus.SUCCESS
+
+    add_trace(
+        state,
+        "verify_complete",
+        "verify",
+        {
+            "health_check": health_result.get("success", False),
+            "tests_passed": state["current_update"]
+            .get("test_results", {})
+            .get("success", False),
+            "verified": all_passed,
+        },
+    )
+
+    return state
+
+
+def handle_failure(state: AgentState) -> AgentState:
+    """Called when verification fails - rollback changes."""
+    state = dict(state)
+
+    branch = state.get("current_update", {}).get("branch")
+    if branch:
+        try:
+            revert_result = json.loads(
+                github_revert_branch.invoke(branch, "Auto-revert: verification failed")
+            )
+            state["revert_result"] = revert_result
+        except Exception:
+            pass
+
+    try:
+        restore_result = json.loads(restore_working_state.invoke({}))
+        state["restore_result"] = restore_result
+    except Exception:
+        pass
+
+    state["needs_human_help"] = True
+    state["failure_reason"] = "Tests failed / App didn't start / CVE not fixed"
+
+    add_trace(
+        state,
+        "handle_failure_complete",
+        "handle_failure",
+        {
+            "reverted": branch is not None,
+            "restored": state.get("restore_result", {}).get("success", False),
+        },
+    )
+
+    return state
+
+
 def create_agent() -> CompiledStateGraph:
     """Create the LangGraph upgrade agent."""
 
@@ -480,29 +648,42 @@ def create_agent() -> CompiledStateGraph:
 
     # Add nodes
     workflow.add_node("observe", observe)
-    workflow.add_node("reason", reason)
+    workflow.add_node("decide", decide)
     workflow.add_node("plan", plan)
     workflow.add_node("act", act)
     workflow.add_node("fix", fix)
+    workflow.add_node("verify", verify)
+    workflow.add_node("handle_failure", handle_failure)
     workflow.add_node("reflect", reflect)
 
     # Set entry point
     workflow.set_entry_point("observe")
 
     # Add edges
-    workflow.add_edge("observe", "reason")
-    workflow.add_edge("reason", "plan")
+    workflow.add_edge("observe", "decide")
+    workflow.add_edge("decide", "plan")
     workflow.add_edge("plan", "act")
     workflow.add_conditional_edges(
         "act",
         should_continue,
         {
             "fix": "fix",
-            "reflect": "reflect",
+            "verify": "verify",
             "end": END,
         },
     )
     workflow.add_edge("fix", "act")
+    workflow.add_conditional_edges(
+        "verify",
+        lambda state: "handle_failure"
+        if state.get("verification_failed")
+        else "reflect",
+        {
+            "handle_failure": "handle_failure",
+            "reflect": "reflect",
+        },
+    )
+    workflow.add_edge("handle_failure", "reflect")
     workflow.add_edge("reflect", END)
 
     return workflow.compile()

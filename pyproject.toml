@@ -62,3 +62,7 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "upgrade_agent.agent"
 ignore_errors = true  # LangGraph uses dict-like access on Pydantic models
+
+[[tool.mypy.overrides]]
+module = "upgrade_agent.tools.dependencies"
+ignore_errors = true  # re.search type narrowing issue

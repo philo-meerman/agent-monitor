@@ -211,3 +211,132 @@ def get_all_dependencies() -> str:
             all_deps.extend(deps)
 
     return json.dumps(all_deps)
+
+
+@tool
+def upgrade_package_version(
+    package: str,
+    from_version: str,
+    to_version: str,
+    file_path: str,
+) -> str:
+    """Upgrade a package to specific version.
+
+    Handles:
+    - requirements.txt: package==version
+    - pyproject.toml: package = "version"
+    - docker-compose: image:tag
+
+    Args:
+        package: Package name
+        from_version: Current version
+        to_version: Target version
+        file_path: Path to file to update
+
+    Returns:
+        JSON with: {success, changes_made, error}
+    """
+    target_path = Path(file_path)
+
+    if not target_path.exists():
+        return json.dumps(
+            {
+                "success": False,
+                "error": f"File not found: {file_path}",
+                "changes_made": [],
+            }
+        )
+
+    try:
+        content = target_path.read_text()
+        original_content = content
+        changes_made = []
+
+        file_ext = target_path.suffix.lower()
+
+        if file_ext == ".txt":
+            old_patterns = [
+                f"{package}=={from_version}",
+                f"{package}={from_version}",
+                f"{package}>={from_version}",
+                f"{package}<={from_version}",
+            ]
+
+            for pattern in old_patterns:
+                if pattern in content:
+                    new_line = pattern.replace(from_version, to_version)
+                    content = content.replace(pattern, new_line)
+                    changes_made.append(
+                        {
+                            "old": pattern,
+                            "new": new_line,
+                        }
+                    )
+                    break
+            else:
+                content = content.rstrip() + f"\n{package}=={to_version}"
+                changes_made.append(
+                    {
+                        "old": f"{package} (not found)",
+                        "new": f"{package}=={to_version}",
+                    }
+                )
+
+        elif file_ext in [".yml", ".yaml"]:
+            image_pattern = r"image:\s*([^\s:#]+)(?::([^:\s]+))?"
+            matches = list(re.finditer(image_pattern, content))
+
+            for match in matches:
+                full_match = match.group(0)
+                image_name = match.group(1)
+                current_tag = match.group(2)
+
+                if package in image_name:
+                    if current_tag == from_version or from_version in full_match:
+                        new_line = full_match.replace(
+                            f":{current_tag}" if current_tag else image_name,
+                            f":{to_version}",
+                        )
+                        content = content.replace(full_match, new_line)
+                        changes_made.append(
+                            {
+                                "old": full_match,
+                                "new": new_line,
+                            }
+                        )
+
+        elif file_ext == ".toml":
+            patterns = [
+                rf'{package}\s*=\s*"[^"]*"',
+                rf"{package}\s*=\s*'[^']*'",
+            ]
+
+            for pattern in patterns:
+                match = re.search(pattern, content)
+                if match is not None:
+                    old_line = match.group(0)
+                    new_line = re.sub(r'["\'][^"\']*["\']', f'"{to_version}"', old_line)
+                    content = content.replace(old_line, new_line)
+                    changes_made.append(
+                        {
+                            "old": old_line,
+                            "new": new_line,
+                        }
+                    )
+                    break
+
+        if content != original_content:
+            target_path.write_text(content)
+
+        return json.dumps(
+            {
+                "success": True,
+                "changes_made": changes_made,
+                "package": package,
+                "from_version": from_version,
+                "to_version": to_version,
+            }
+        )
+
+    except Exception as e:
+        return json.dumps({"success": False, "error": str(e), "changes_made": []})
