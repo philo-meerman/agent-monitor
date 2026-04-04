@@ -5,6 +5,7 @@ on:
     types: [created]
   repository_dispatch:
     types: [vulnerability-detected]
+  workflow_dispatch:
 
 jobs:
   upgrade:
