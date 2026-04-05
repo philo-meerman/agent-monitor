@@ -46,8 +46,8 @@ jobs:
         env:
           PATH: /opt/homebrew/bin:/usr/local/bin:$PATH
         run: |
-          /opt/homebrew/bin/python3 -m pip install -r requirements.txt
-          /opt/homebrew/bin/python3 -m pip install -r requirements-dev.txt
+          /opt/homebrew/bin/python3 -m pip install --break-system-packages -r requirements.txt
+          /opt/homebrew/bin/python3 -m pip install --break-system-packages -r requirements-dev.txt
 
       - name: Run upgrade agent
         env:
