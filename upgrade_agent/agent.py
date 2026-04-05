@@ -397,6 +397,7 @@ def act(state: AgentState) -> AgentState:
     update_data = state["current_update"]
     if hasattr(update_data, "model_dump"):
         update_data = update_data.model_dump()
+        state["current_update"] = update_data
     update = UpdateAttempt(**update_data)
     dep = update.update.dependency
     dep_dict = dep.model_dump() if hasattr(dep, "model_dump") else dict(dep)
@@ -687,6 +688,7 @@ def fix(state: AgentState) -> AgentState:
     current_update = state["current_update"]
     if hasattr(current_update, "model_dump"):
         current_update = current_update.model_dump()
+        state["current_update"] = current_update
     update = UpdateAttempt(**current_update)
     test_results = update.test_results or {}
 
@@ -740,6 +742,7 @@ def reflect(state: AgentState) -> AgentState:
         current_update = state["current_update"]
         if hasattr(current_update, "model_dump"):
             current_update = current_update.model_dump()
+            state["current_update"] = current_update
         update = UpdateAttempt(**current_update)
 
         memory_entry = {
@@ -810,6 +813,7 @@ def verify(state: AgentState) -> AgentState:
     update_data = state["current_update"]
     if hasattr(update_data, "model_dump"):
         update_data = update_data.model_dump()
+        state["current_update"] = update_data
     update = UpdateAttempt(**update_data)
     dep = update.update.dependency
     dep_dict = dep.model_dump() if hasattr(dep, "model_dump") else dict(dep)
