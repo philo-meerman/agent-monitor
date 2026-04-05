@@ -43,9 +43,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
+        env:
+          PATH: /opt/homebrew/bin:/usr/local/bin:$PATH
         run: |
-          python3 -m pip install -r requirements.txt
-          python3 -m pip install -r requirements-dev.txt
+          /opt/homebrew/bin/python3 -m pip install -r requirements.txt
+          /opt/homebrew/bin/python3 -m pip install -r requirements-dev.txt
 
       - name: Run upgrade agent
         env:
@@ -55,9 +57,10 @@ jobs:
           LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
           LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
           LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+          PATH: /opt/homebrew/bin:/usr/local/bin:$PATH
           TRIGGER_TYPE: ${{ (github.event_name == 'schedule') && 'scheduled' || 'manual' }}
         run: |
-          python3 run-upgrade-agent.py
+          /opt/homebrew/bin/python3 run-upgrade-agent.py
 
       - name: Report status
         if: always()
