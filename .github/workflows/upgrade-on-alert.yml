@@ -2,10 +2,16 @@ name: Upgrade Agent - On Vulnerability Alert
 
 on:
   workflow_dispatch:
-  repository_dispatch:
-    types: [vulnerability-detected]
-  dependabot_alert:
-    types: [created]
+    inputs:
+      run_type:
+        description: 'Run type'
+        required: false
+        default: 'manual'
+        type: choice
+        options:
+        - manual
+        - vulnerability_detected
+        - dependabot
 
 jobs:
   upgrade:
