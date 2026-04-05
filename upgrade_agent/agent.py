@@ -777,7 +777,7 @@ def reflect(state: AgentState) -> AgentState:
             "timestamp": datetime.now().isoformat(),
         }
 
-        append_memory.invoke("upgrades", memory_entry)
+        append_memory.invoke({"key": "upgrades", "data": memory_entry})
 
         # Log to LangFuse
         try:
