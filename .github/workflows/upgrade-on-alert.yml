@@ -10,11 +10,6 @@ on:
   repository_dispatch:
     types: [vulnerability-detected]
   workflow_dispatch:
-    inputs:
-      debug:
-        description: "Run with debugging output"
-        required: false
-        default: "false"
 
 jobs:
   upgrade:
@@ -26,7 +21,6 @@ jobs:
       github.event_name == 'repository_dispatch' ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'dependabot_alert'
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
