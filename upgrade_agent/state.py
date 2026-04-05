@@ -11,7 +11,13 @@ class UpdateType(str, Enum):
     """Type of dependency update."""
 
     PYTHON_PACKAGE = "python_package"
+    PYTHON_POETRY = "python_poetry"
     DOCKER_IMAGE = "docker_image"
+    NODE_NPM = "node_npm"
+    NODE_YARN = "node_yarn"
+    GO_MODULE = "go_module"
+    HELM_CHART = "helm_chart"
+    TERRAFORM_PROVIDER = "terraform"
 
 
 class VersionBump(str, Enum):

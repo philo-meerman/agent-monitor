@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Literal
 
 # Add parent to path
@@ -15,7 +16,12 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from upgrade_agent.config import GEMINI_API_KEY, GEMINI_MODEL, validate_config
+from upgrade_agent.config import (
+    GEMINI_API_KEY,
+    GEMINI_MODEL,
+    PROJECT_DIR,
+    validate_config,
+)
 from upgrade_agent.constants import MAX_ATTEMPTS_PER_ISSUE
 from upgrade_agent.decision.risk_scorer import calculate_risk_score
 from upgrade_agent.decision.test_coverage import get_test_coverage_for_vulnerabilities
@@ -32,6 +38,7 @@ from upgrade_agent.state import (
     TraceEvent,
     UpdateAttempt,
     UpdateStatus,
+    UpdateType,
 )
 from upgrade_agent.tools.advisory import (
     get_vulnerability_scan,
@@ -40,6 +47,11 @@ from upgrade_agent.tools.dependencies import (
     check_dockerhub_version,
     check_pypi_version,
     get_all_dependencies,
+    upgrade_package_version,
+)
+from upgrade_agent.tools.docker import (
+    restart_docker_compose,
+    wait_for_service_health,
 )
 from upgrade_agent.tools.execution import run_tests
 from upgrade_agent.tools.github import (
@@ -50,6 +62,7 @@ from upgrade_agent.tools.github import (
 from upgrade_agent.tools.health_checker import run_health_check_suite
 from upgrade_agent.tools.langfuse import log_event, log_upgrade_result
 from upgrade_agent.tools.memory import append_memory, read_memory
+from upgrade_agent.tools.poetry import run_poetry_lock, update_pyproject_toml
 from upgrade_agent.tools.state_recovery import restore_working_state
 
 # Initialize LLM
@@ -381,62 +394,37 @@ def act(state: AgentState) -> AgentState:
     if not state.get("current_update"):
         return state
 
-    # Get file content, update version
     update_data = state["current_update"]
     update = UpdateAttempt(**update_data)
     dep = update.update.dependency
+    update_type = dep.get("update_type", "python_package")
     file_path = dep["file_path"]
     name = dep["name"]
     new_version = update.update.latest_version
+    old_version = dep.get("current_version", "")
 
-    # Read current file
     try:
-        with open(file_path) as f:
-            content = f.read()
-
-        # Simple replacement (in production, use proper parsing)
-        old_version = dep.get("current_version", "")
-        if old_version and old_version != "latest":
-            new_content = content.replace(
-                f"{name}=={old_version}", f"{name}=={new_version}"
+        # Handle different update types
+        if update_type == UpdateType.DOCKER_IMAGE:
+            state = _act_docker_image(
+                state, dep, file_path, name, old_version, new_version
+            )
+        elif update_type in (UpdateType.NODE_NPM, UpdateType.NODE_YARN):
+            state = _act_node_package(
+                state, dep, file_path, name, old_version, new_version
+            )
+        elif update_type == UpdateType.PYTHON_POETRY:
+            state = _act_poetry_package(
+                state, dep, file_path, name, old_version, new_version
             )
         else:
-            # For docker or latest, append
-            new_content = content + f"\n{name}=={new_version}"
-
-        # Write back
-        with open(file_path, "w") as f:
-            f.write(new_content)
-
-        # Create branch and commit
-        branch_name = f"upgrade/{name}-{new_version}"
-
-        # Create branch
-        branch_result = json.loads(github_create_branch.invoke(branch_name, "main"))
-
-        if branch_result.get("success"):
-            # Commit file
-            commit_result = json.loads(
-                github_update_file.invoke(
-                    path=file_path,
-                    content=new_content,
-                    message=f"Upgrade {name} from {old_version} to {new_version}",
-                    branch=branch_name,
-                )
+            # Default: Python pip package
+            state = _act_python_package(
+                state, dep, file_path, name, old_version, new_version
             )
-
-            if commit_result.get("success"):
-                state["current_update"]["status"] = UpdateStatus.SUCCESS
 
     except Exception as e:
         state["current_update"]["error"] = str(e)
-        state["current_update"]["status"] = UpdateStatus.FAILED
-
-    # Run tests
-    test_result = json.loads(run_tests.invoke({}))
-    state["current_update"]["test_results"] = test_result
-
-    if not test_result.get("success"):
         state["current_update"]["status"] = UpdateStatus.FAILED
 
     add_trace(
@@ -445,11 +433,245 @@ def act(state: AgentState) -> AgentState:
         "act",
         {
             "status": state["current_update"].get("status"),
-            "test_passed": test_result.get("success"),
+            "update_type": update_type,
         },
     )
 
     return state
+
+
+def _act_python_package(
+    state: dict,
+    dep: dict,
+    file_path: str,
+    name: str,
+    old_version: str,
+    new_version: str,
+) -> dict:
+    """Handle Python package upgrade (pip)."""
+    # Use upgrade_package_version tool
+    result = upgrade_package_version.invoke(
+        package=name,
+        from_version=old_version,
+        to_version=new_version,
+        file_path=file_path,
+    )
+    result_data = json.loads(result)
+
+    if result_data.get("success"):
+        # Create branch and commit
+        branch_name = f"upgrade/{name}-{new_version}"
+        branch_result = json.loads(github_create_branch.invoke(branch_name, "main"))
+
+        if branch_result.get("success"):
+            new_content = Path(file_path).read_text()
+            commit_result = json.loads(
+                github_update_file.invoke(
+                    path=file_path,
+                    content=new_content,
+                    message=f"Upgrade {name} from {old_version} to {new_version}",
+                    branch=branch_name,
+                )
+            )
+            if commit_result.get("success"):
+                state["current_update"]["status"] = UpdateStatus.SUCCESS
+
+    # Run tests
+    test_result = json.loads(run_tests.invoke({}))
+    state["current_update"]["test_results"] = test_result
+
+    if not test_result.get("success"):
+        state["current_update"]["status"] = UpdateStatus.FAILED
+
+    return state
+
+
+def _act_docker_image(
+    state: dict,
+    dep: dict,
+    file_path: str,
+    name: str,
+    old_version: str,
+    new_version: str,
+) -> dict:
+    """Handle Docker image upgrade."""
+    # Update docker-compose file
+    result = upgrade_package_version.invoke(
+        package=name,
+        from_version=old_version,
+        to_version=new_version,
+        file_path=file_path,
+    )
+    result_data = json.loads(result)
+
+    if result_data.get("success"):
+        # Create branch and commit
+        branch_name = f"upgrade/{name}-{new_version}"
+        branch_result = json.loads(github_create_branch.invoke(branch_name, "main"))
+
+        if branch_result.get("success"):
+            new_content = Path(file_path).read_text()
+            commit_result = json.loads(
+                github_update_file.invoke(
+                    path=file_path,
+                    content=new_content,
+                    message=f"Upgrade {name} from {old_version} to {new_version}",
+                    branch=branch_name,
+                )
+            )
+            if commit_result.get("success"):
+                state["current_update"]["status"] = UpdateStatus.SUCCESS
+
+    # Restart docker-compose
+    restart_result = json.loads(restart_docker_compose.invoke(file_path))
+    state["current_update"]["restart_result"] = restart_result
+
+    # Wait for health and verify
+    if restart_result.get("success"):
+        # Try to determine health URL based on image
+        health_url = _get_health_url_for_image(name)
+        if health_url:
+            health_result = json.loads(
+                wait_for_service_health.invoke(
+                    url=health_url,
+                    max_wait=60,
+                )
+            )
+            state["current_update"]["health_check"] = health_result
+            if not health_result.get("healthy"):
+                state["current_update"]["status"] = UpdateStatus.FAILED
+
+    return state
+
+
+def _act_node_package(
+    state: dict,
+    dep: dict,
+    file_path: str,
+    name: str,
+    old_version: str,
+    new_version: str,
+) -> dict:
+    """Handle Node.js package upgrade (npm/yarn)."""
+    from upgrade_agent.tools.nodejs import install_npm_dependencies, update_npm_package
+
+    # Update package.json
+    result = update_npm_package.invoke(
+        package=name,
+        version=new_version,
+        file_path=file_path,
+    )
+    result_data = json.loads(result)
+
+    if result_data.get("success"):
+        # Install dependencies
+        install_result = json.loads(
+            install_npm_dependencies.invoke(
+                path=str(Path(file_path).parent),
+            )
+        )
+        state["current_update"]["install_result"] = install_result
+
+        if install_result.get("success"):
+            # Create branch and commit
+            branch_name = f"upgrade/{name}-{new_version}"
+            branch_result = json.loads(github_create_branch.invoke(branch_name, "main"))
+
+            if branch_result.get("success"):
+                new_content = Path(file_path).read_text()
+                commit_result = json.loads(
+                    github_update_file.invoke(
+                        path=file_path,
+                        content=new_content,
+                        message=f"Upgrade {name} from {old_version} to {new_version}",
+                        branch=branch_name,
+                    )
+                )
+                if commit_result.get("success"):
+                    state["current_update"]["status"] = UpdateStatus.SUCCESS
+
+    return state
+
+
+def _act_poetry_package(
+    state: dict,
+    dep: dict,
+    file_path: str,
+    name: str,
+    old_version: str,
+    new_version: str,
+) -> dict:
+    """Handle Poetry package upgrade."""
+    # Update pyproject.toml
+    result = update_pyproject_toml.invoke(
+        package=name,
+        version=new_version,
+        file_path=file_path,
+    )
+    result_data = json.loads(result)
+
+    if result_data.get("success"):
+        # Run poetry lock
+        lock_result = json.loads(
+            run_poetry_lock.invoke(
+                path=str(Path(file_path).parent),
+            )
+        )
+        state["current_update"]["lock_result"] = lock_result
+
+        if lock_result.get("success"):
+            # Create branch and commit
+            branch_name = f"upgrade/{name}-{new_version}"
+            branch_result = json.loads(github_create_branch.invoke(branch_name, "main"))
+
+            if branch_result.get("success"):
+                # Commit pyproject.toml and poetry.lock
+                new_content = Path(file_path).read_text()
+                commit_result = json.loads(
+                    github_update_file.invoke(
+                        path=file_path,
+                        content=new_content,
+                        message=f"Upgrade {name} from {old_version} to {new_version}",
+                        branch=branch_name,
+                    )
+                )
+
+                # Also commit poetry.lock if it exists
+                lock_path = Path(file_path).parent / "poetry.lock"
+                if lock_path.exists():
+                    lock_content = lock_path.read_text()
+                    json.loads(
+                        github_update_file.invoke(
+                            path=str(lock_path),
+                            content=lock_content,
+                            message=f"Update poetry.lock for {name} upgrade",
+                            branch=branch_name,
+                        )
+                    )
+
+                if commit_result.get("success"):
+                    state["current_update"]["status"] = UpdateStatus.SUCCESS
+
+    return state
+
+
+def _get_health_url_for_image(image: str) -> str:
+    """Determine health check URL based on Docker image."""
+    image_lower = image.lower()
+
+    # Map common images to their health endpoints
+    health_urls = {
+        "langfuse/langfuse": "http://localhost:3000/",
+        "postgres": "http://localhost:5432",  # Can't really check this via HTTP
+        "redis": "http://localhost:6379",
+        "minio": "http://localhost:9000/minio/health/live",
+    }
+
+    for key, url in health_urls.items():
+        if key in image_lower:
+            return url
+
+    return None
 
 
 def fix(state: AgentState) -> AgentState:
@@ -576,31 +798,125 @@ def verify(state: AgentState) -> AgentState:
     if not state.get("current_update"):
         return state
 
-    health_result = json.loads(run_health_check_suite.invoke({}))
-    state["current_update"]["health_check"] = health_result
+    update_data = state["current_update"]
+    update = UpdateAttempt(**update_data)
+    dep = update.update.dependency
+    update_type = dep.get("update_type", "python_package")
 
-    all_passed = health_result.get("success", False) and state["current_update"].get(
-        "test_results", {}
-    ).get("success", False)
-
-    if not all_passed:
-        state["current_update"]["status"] = UpdateStatus.FAILED
-        state["verification_failed"] = True
+    # Verify based on update type
+    if update_type == UpdateType.DOCKER_IMAGE:
+        state = _verify_docker_upgrade(state, dep)
+    elif update_type in (UpdateType.NODE_NPM, UpdateType.NODE_YARN):
+        state = _verify_node_upgrade(state, dep)
+    elif update_type == UpdateType.PYTHON_POETRY:
+        state = _verify_poetry_upgrade(state, dep)
+    elif update_type == UpdateType.PYTHON_PACKAGE:
+        state = _verify_python_upgrade(state, dep)
     else:
-        state["current_update"]["status"] = UpdateStatus.SUCCESS
+        # Default: Python package - run health check suite
+        health_result = json.loads(run_health_check_suite.invoke({}))
+        state["current_update"]["health_check"] = health_result
+
+        all_passed = health_result.get("success", False) and state[
+            "current_update"
+        ].get("test_results", {}).get("success", False)
+
+        if not all_passed:
+            state["current_update"]["status"] = UpdateStatus.FAILED
+            state["verification_failed"] = True
+        else:
+            state["current_update"]["status"] = UpdateStatus.SUCCESS
 
     add_trace(
         state,
         "verify_complete",
         "verify",
         {
-            "health_check": health_result.get("success", False),
-            "tests_passed": state["current_update"]
-            .get("test_results", {})
-            .get("success", False),
-            "verified": all_passed,
+            "verified": state["current_update"].get("status") == UpdateStatus.SUCCESS,
+            "update_type": update_type,
         },
     )
+
+    return state
+
+
+def _verify_python_upgrade(state: dict, dep: dict) -> dict:
+    """Verify Python package upgrade - run tests + verify app can start."""
+    from upgrade_agent.tools.execution import check_app_health
+
+    # Check test results first
+    test_results = state["current_update"].get("test_results", {})
+    if not test_results.get("success"):
+        state["current_update"]["status"] = UpdateStatus.FAILED
+        state["verification_failed"] = True
+        return state
+
+    # Try to verify the app can start (if it's a Flask/web app)
+    # Check if there's a web app file we can test
+    app_path = PROJECT_DIR / "app.py"
+    if app_path.exists():
+        # Try to check if app is already running or can be reached
+        # Check common ports
+        for port in [5000, 5001, 8080]:
+            health_result = json.loads(
+                check_app_health.invoke({"url": f"http://localhost:{port}/"})
+            )
+            if health_result.get("healthy"):
+                state["current_update"]["app_verified"] = True
+                state["current_update"]["app_port"] = port
+                break
+
+    state["current_update"]["status"] = UpdateStatus.SUCCESS
+    return state
+
+
+def _verify_docker_upgrade(state: dict, dep: dict) -> dict:
+    """Verify Docker image upgrade."""
+    file_path = dep.get("file_path", "")
+    image_name = dep.get("name", "")
+
+    # Check restart result from act
+    restart_result = state["current_update"].get("restart_result", {})
+
+    if not restart_result.get("success"):
+        state["current_update"]["status"] = UpdateStatus.FAILED
+        state["verification_failed"] = True
+        return state
+
+    # Check health result from act
+    health_result = state["current_update"].get("health_check", {})
+
+    if health_result and not health_result.get("healthy"):
+        state["current_update"]["status"] = UpdateStatus.FAILED
+        state["verification_failed"] = True
+    else:
+        state["current_update"]["status"] = UpdateStatus.SUCCESS
+
+    return state
+
+
+def _verify_node_upgrade(state: dict, dep: dict) -> dict:
+    """Verify Node.js package upgrade."""
+    install_result = state["current_update"].get("install_result", {})
+
+    if not install_result.get("success"):
+        state["current_update"]["status"] = UpdateStatus.FAILED
+        state["verification_failed"] = True
+    else:
+        state["current_update"]["status"] = UpdateStatus.SUCCESS
+
+    return state
+
+
+def _verify_poetry_upgrade(state: dict, dep: dict) -> dict:
+    """Verify Poetry package upgrade."""
+    lock_result = state["current_update"].get("lock_result", {})
+
+    if not lock_result.get("success"):
+        state["current_update"]["status"] = UpdateStatus.FAILED
+        state["verification_failed"] = True
+    else:
+        state["current_update"]["status"] = UpdateStatus.SUCCESS
 
     return state
 

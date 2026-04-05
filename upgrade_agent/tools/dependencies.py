@@ -131,10 +131,11 @@ def check_pypi_version(package: str) -> str:
         if response.status_code == 200:
             data = response.json()
             info = data.get("info", {})
+            version = info.get("version") or info.get("release_version", "unknown")
             return json.dumps(
                 {
                     "package": package,
-                    "latest_version": info.get("release_version", "unknown"),
+                    "latest_version": version,
                     "pypi_url": info.get("package_url", ""),
                     "summary": info.get("summary", ""),
                 }
@@ -181,6 +182,84 @@ def check_dockerhub_version(image: str) -> str:
                     }
                 )
         return json.dumps({"error": f"Could not fetch tags for {image}"})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@tool
+def check_dockerhub_versioned(image: str, version_prefix: str = None) -> str:
+    """Check the latest versioned tag for a Docker image on Docker Hub.
+
+    Unlike check_dockerhub_version, this returns the latest semantic version
+    tag (e.g., "3.163") instead of "latest".
+
+    Args:
+        image: Name of the Docker image (e.g., 'langfuse/langfuse')
+        version_prefix: Optional version prefix to filter (e.g., "3." for v3 tags)
+
+    Returns:
+        JSON string with latest versioned tag
+    """
+    import re
+
+    import httpx
+
+    if "/" not in image:
+        image = f"library/{image}"
+
+    try:
+        # Get more tags to find the latest version
+        response = httpx.get(
+            f"https://hub.docker.com/v2/repositories/{image}/tags",
+            params={"page_size": 100},
+            timeout=10,
+        )
+        if response.status_code == 200:
+            data = response.json()
+            results = data.get("results", [])
+
+            # Filter and sort version tags
+            version_tags = []
+            for tag in results:
+                name = tag.get("name", "")
+
+                # Skip non-version tags
+                if name in ("latest", "main", "master", "stable"):
+                    continue
+                if name.startswith("sha-"):
+                    continue
+                if name.startswith("v") and not any(c.isdigit() for c in name):
+                    continue
+
+                # Filter by version prefix if provided
+                if version_prefix and not name.startswith(version_prefix):
+                    continue
+
+                # Only keep semantic version-like tags (e.g., 3.163, 3.162.0)
+                if re.match(r"^\d+(\.\d+)+$", name):
+                    version_tags.append(name)
+
+            if version_tags:
+                # Sort by semantic version
+                def parse_version(v):
+                    try:
+                        return [int(x) for x in v.split(".")]
+                    except ValueError:
+                        return [0]
+
+                version_tags.sort(key=parse_version, reverse=True)
+                latest = version_tags[0]
+
+                return json.dumps(
+                    {
+                        "image": image,
+                        "latest_tag": latest,
+                        "available_tags": version_tags[:10],
+                        "tag_count": len(version_tags),
+                    }
+                )
+
+        return json.dumps({"error": f"No versioned tags found for {image}"})
     except Exception as e:
         return json.dumps({"error": str(e)})
 
