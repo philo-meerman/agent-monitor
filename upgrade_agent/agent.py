@@ -285,6 +285,10 @@ def decide(state: AgentState) -> AgentState:
 
     # Get first update to reason about
     update = state["available_updates"][0]
+    if hasattr(update, "model_dump"):
+        update = Update(**update.model_dump())
+    elif isinstance(update, dict):
+        update = Update(**update)
 
     prompt = build_reasoning_prompt(
         name=update.dependency.name,
@@ -339,6 +343,10 @@ def plan(state: AgentState) -> AgentState:
         return state
 
     update = state["available_updates"][0]
+    if hasattr(update, "model_dump"):
+        update = Update(**update.model_dump())
+    elif isinstance(update, dict):
+        update = Update(**update)
 
     # Get previous upgrades
     prev_json = read_memory.invoke("upgrades")
