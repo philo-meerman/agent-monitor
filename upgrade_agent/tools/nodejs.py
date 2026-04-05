@@ -112,7 +112,8 @@ def check_yarn_version(package: str) -> str:
     Returns:
         JSON string with latest version
     """
-    return check_npm_version.invoke({"package": package})
+    result: str = check_npm_version.invoke({"package": package})
+    return result
 
 
 @tool

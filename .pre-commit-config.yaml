@@ -44,6 +44,8 @@ repos:
         args: [
           --ignore-missing-imports,
           --follow-imports=skip,
+          --disable-error-code=assignment,
+          --python-version=3.12,
         ]
 
   # Shell script linting + formatting

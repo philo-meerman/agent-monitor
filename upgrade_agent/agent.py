@@ -988,9 +988,9 @@ def create_agent() -> CompiledStateGraph:
     workflow.add_edge("fix", "act")
     workflow.add_conditional_edges(
         "verify",
-        lambda state: "handle_failure"
-        if state.get("verification_failed")
-        else "reflect",
+        lambda state: (
+            "handle_failure" if state.get("verification_failed") else "reflect"
+        ),
         {
             "handle_failure": "handle_failure",
             "reflect": "reflect",
