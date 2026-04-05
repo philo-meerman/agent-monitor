@@ -2,16 +2,42 @@ name: Upgrade Agent - On Vulnerability Alert
 
 on:
   workflow_dispatch:
+    inputs:
+      run_type:
+        description: 'Run type'
+        required: false
+        default: 'manual'
+        type: choice
+        options:
+        - manual
+        - vulnerability_detected
   repository_dispatch:
     types: [vulnerability-detected]
-  dependabot_alert:
-    types: [created]
+  schedule:
+    - cron: '0 * * * *'
 
 jobs:
+  check-vulnerabilities:
+    name: Check for Vulnerabilities
+    runs-on: ubuntu-latest
+    outputs:
+      has_vulns: ${{ steps.check.outputs.has_vulns }}
+    steps:
+      - name: Check for Dependabot alerts
+        id: check
+        run: |
+          ALERTS=$(gh api repos/philo-meerman/agent-monitor/dependabot/alerts 2>/dev/null | jq '[.[] | select(.state == "open")] | length')
+          echo "has_vulns=$ALERTS" >> $GITHUB_OUTPUT
+          if [ "$ALERTS" -gt 0 ]; then
+            echo "Found $ALERTS open dependabot alerts"
+          fi
+
   upgrade:
     name: Run Upgrade Agent
     runs-on: self-hosted
     timeout-minutes: 30
+    needs: check-vulnerabilities
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || needs.check-vulnerabilities.outputs.has_vulns != '0'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,7 +60,7 @@ jobs:
           LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
           LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
           LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
-          TRIGGER_TYPE: ${{ (github.event_name == 'dependabot_alert') && 'webhook' || 'manual' }}
+          TRIGGER_TYPE: ${{ (github.event_name == 'schedule') && 'scheduled' || 'manual' }}
         run: |
           python run-upgrade-agent.py
 
