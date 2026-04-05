@@ -47,6 +47,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Create runner user directory
+        run: sudo mkdir -p /Users/runner && sudo chown $USER /Users/runner
+
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
