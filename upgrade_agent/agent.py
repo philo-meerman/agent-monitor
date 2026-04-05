@@ -36,6 +36,7 @@ from upgrade_agent.state import (
     AvailableUpdate,
     Dependency,
     TraceEvent,
+    Update,
     UpdateAttempt,
     UpdateStatus,
     UpdateType,
