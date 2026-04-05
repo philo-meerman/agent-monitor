@@ -1,21 +1,7 @@
 name: Upgrade Agent - On Vulnerability Alert
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
-    inputs:
-      run_type:
-        description: 'Run type'
-        required: false
-        default: 'manual'
-        type: choice
-        options:
-        - manual
-        - vulnerability_detected
-        - dependabot
   repository_dispatch:
     types: [vulnerability-detected]
   dependabot_alert:
@@ -26,11 +12,6 @@ jobs:
     name: Run Upgrade Agent
     runs-on: self-hosted
     timeout-minutes: 30
-    if: >
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
-      || github.event_name == 'workflow_dispatch'
-      || github.event_name == 'repository_dispatch'
-      || github.event_name == 'dependabot_alert'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,7 +34,7 @@ jobs:
           LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
           LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
           LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
-          TRIGGER_TYPE: ${{ github.event_name == 'dependabot_alert' && 'webhook' || 'manual' }}
+          TRIGGER_TYPE: ${{ (github.event_name == 'dependabot_alert') && 'webhook' || 'manual' }}
         run: |
           python run-upgrade-agent.py
 
