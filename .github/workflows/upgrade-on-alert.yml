@@ -42,14 +42,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create runner user directory
-        run: mkdir -p /Users/runner
-
-      - name: Set up Python
-        run: |
-          echo "Using system Python"
-          python3 --version
-
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
