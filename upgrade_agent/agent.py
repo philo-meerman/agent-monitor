@@ -1028,6 +1028,7 @@ def create_agent() -> CompiledStateGraph:
         {
             "fix": "fix",
             "verify": "verify",
+            "reflect": "reflect",
             "end": END,
         },
     )
