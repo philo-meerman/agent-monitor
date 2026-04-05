@@ -85,6 +85,8 @@ def get_llm():
 
 def add_trace(state: AgentState, event_type: str, node: str, data: dict) -> AgentState:
     """Add a trace event to state."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     trace = TraceEvent(
         timestamp=datetime.now(),
         event_type=event_type,
@@ -104,6 +106,8 @@ def add_trace(state: AgentState, event_type: str, node: str, data: dict) -> Agen
 
 def observe(state: AgentState) -> AgentState:
     """Scan for available updates."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
     state["traces"] = state.get("traces", [])
 
@@ -186,7 +190,9 @@ def observe(state: AgentState) -> AgentState:
 
 
 def decide(state: AgentState) -> AgentState:
-    """Decision node - evaluate whether to auto-upgrade or request review based on vulnerabilities."""
+    """Decide which updates to apply."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
 
     # Get vulnerabilities from observe step
@@ -325,6 +331,8 @@ def decide(state: AgentState) -> AgentState:
 
 def plan(state: AgentState) -> AgentState:
     """Create upgrade plan."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
 
     if not state.get("available_updates"):
@@ -389,6 +397,8 @@ def plan(state: AgentState) -> AgentState:
 
 def act(state: AgentState) -> AgentState:
     """Execute the upgrade."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
 
     if not state.get("current_update"):
@@ -680,6 +690,8 @@ def _get_health_url_for_image(image: str) -> str:
 
 def fix(state: AgentState) -> AgentState:
     """Attempt to fix test failures."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
 
     if not state.get("current_update"):
@@ -735,6 +747,8 @@ def fix(state: AgentState) -> AgentState:
 
 def reflect(state: AgentState) -> AgentState:
     """Reflect on the upgrade and store in memory."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
 
     # Store upgrade result in memory
@@ -770,6 +784,8 @@ def reflect(state: AgentState) -> AgentState:
             pass
 
     # Move to completed
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     if state.get("current_update"):
         state["completed_updates"] = state.get("completed_updates", [])
         state["completed_updates"].append(state["current_update"])
@@ -789,6 +805,8 @@ def reflect(state: AgentState) -> AgentState:
 
 def should_continue(state: AgentState) -> Literal["fix", "reflect", "end"]:
     """Determine if should continue or end."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     if not state.get("current_update"):
         return "end"
 
@@ -805,6 +823,8 @@ def should_continue(state: AgentState) -> Literal["fix", "reflect", "end"]:
 
 def verify(state: AgentState) -> AgentState:
     """Verify the upgrade was successful."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
 
     if not state.get("current_update"):
@@ -936,6 +956,8 @@ def _verify_poetry_upgrade(state: dict, dep: dict) -> dict:
 
 def handle_failure(state: AgentState) -> AgentState:
     """Called when verification fails - rollback changes."""
+    if hasattr(state, "model_dump"):
+        state = state.model_dump()
     state = dict(state)
 
     branch = state.get("current_update", {}).get("branch")
