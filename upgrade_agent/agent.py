@@ -395,6 +395,8 @@ def act(state: AgentState) -> AgentState:
         return state
 
     update_data = state["current_update"]
+    if hasattr(update_data, "model_dump"):
+        update_data = update_data.model_dump()
     update = UpdateAttempt(**update_data)
     dep = update.update.dependency
     update_type = dep.get("update_type", "python_package")
@@ -681,7 +683,10 @@ def fix(state: AgentState) -> AgentState:
     if not state.get("current_update"):
         return state
 
-    update = UpdateAttempt(**state["current_update"])
+    current_update = state["current_update"]
+    if hasattr(current_update, "model_dump"):
+        current_update = current_update.model_dump()
+    update = UpdateAttempt(**current_update)
     test_results = update.test_results or {}
 
     prompt = build_error_analysis_prompt(
@@ -731,7 +736,10 @@ def reflect(state: AgentState) -> AgentState:
 
     # Store upgrade result in memory
     if state.get("current_update"):
-        update = UpdateAttempt(**state["current_update"])
+        current_update = state["current_update"]
+        if hasattr(current_update, "model_dump"):
+            current_update = current_update.model_dump()
+        update = UpdateAttempt(**current_update)
 
         memory_entry = {
             "dependency": update.update.dependency.name,
@@ -799,6 +807,8 @@ def verify(state: AgentState) -> AgentState:
         return state
 
     update_data = state["current_update"]
+    if hasattr(update_data, "model_dump"):
+        update_data = update_data.model_dump()
     update = UpdateAttempt(**update_data)
     dep = update.update.dependency
     update_type = dep.get("update_type", "python_package")
