@@ -210,7 +210,7 @@ def get_vulnerability_scan() -> str:
         if dep.get("update_type") == "docker_image":
             ecosystem = "docker"
 
-        gh_result = check_github_advisory.invoke(  # type: ignore[call-arg]
+        gh_result = check_github_advisory.invoke(
             package_name=package_name, ecosystem=ecosystem
         )
         gh_data = json.loads(gh_result)
@@ -221,7 +221,7 @@ def get_vulnerability_scan() -> str:
             v["is_direct"] = True
         all_vulnerabilities.extend(vulns)
 
-        pypi_result = check_pypi_advisory.invoke(package=package_name)  # type: ignore[call-arg]
+        pypi_result = check_pypi_advisory.invoke(package=package_name)
         pypi_data = json.loads(pypi_result)
         advisories = pypi_data.get("advisories", [])
         for a in advisories:
