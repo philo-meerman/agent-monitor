@@ -399,30 +399,31 @@ def act(state: AgentState) -> AgentState:
         update_data = update_data.model_dump()
     update = UpdateAttempt(**update_data)
     dep = update.update.dependency
-    update_type = dep.get("update_type", "python_package")
-    file_path = dep["file_path"]
-    name = dep["name"]
+    dep_dict = dep.model_dump() if hasattr(dep, "model_dump") else dict(dep)
+    update_type = dep_dict.get("update_type", "python_package")
+    file_path = dep_dict["file_path"]
+    name = dep_dict["name"]
     new_version = update.update.latest_version
-    old_version = dep.get("current_version", "")
+    old_version = dep_dict.get("current_version", "")
 
     try:
         # Handle different update types
         if update_type == UpdateType.DOCKER_IMAGE:
             state = _act_docker_image(
-                state, dep, file_path, name, old_version, new_version
+                state, dep_dict, file_path, name, old_version, new_version
             )
         elif update_type in (UpdateType.NODE_NPM, UpdateType.NODE_YARN):
             state = _act_node_package(
-                state, dep, file_path, name, old_version, new_version
+                state, dep_dict, file_path, name, old_version, new_version
             )
         elif update_type == UpdateType.PYTHON_POETRY:
             state = _act_poetry_package(
-                state, dep, file_path, name, old_version, new_version
+                state, dep_dict, file_path, name, old_version, new_version
             )
         else:
             # Default: Python pip package
             state = _act_python_package(
-                state, dep, file_path, name, old_version, new_version
+                state, dep_dict, file_path, name, old_version, new_version
             )
 
     except Exception as e:
@@ -811,17 +812,18 @@ def verify(state: AgentState) -> AgentState:
         update_data = update_data.model_dump()
     update = UpdateAttempt(**update_data)
     dep = update.update.dependency
-    update_type = dep.get("update_type", "python_package")
+    dep_dict = dep.model_dump() if hasattr(dep, "model_dump") else dict(dep)
+    update_type = dep_dict.get("update_type", "python_package")
 
     # Verify based on update type
     if update_type == UpdateType.DOCKER_IMAGE:
-        state = _verify_docker_upgrade(state, dep)
+        state = _verify_docker_upgrade(state, dep_dict)
     elif update_type in (UpdateType.NODE_NPM, UpdateType.NODE_YARN):
-        state = _verify_node_upgrade(state, dep)
+        state = _verify_node_upgrade(state, dep_dict)
     elif update_type == UpdateType.PYTHON_POETRY:
-        state = _verify_poetry_upgrade(state, dep)
+        state = _verify_poetry_upgrade(state, dep_dict)
     elif update_type == UpdateType.PYTHON_PACKAGE:
-        state = _verify_python_upgrade(state, dep)
+        state = _verify_python_upgrade(state, dep_dict)
     else:
         # Default: Python package - run health check suite
         health_result = json.loads(run_health_check_suite.invoke({}))
