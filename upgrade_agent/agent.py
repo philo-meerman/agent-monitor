@@ -818,7 +818,7 @@ def should_continue(state: AgentState) -> Literal["fix", "reflect", "end"]:
     if not state.get("current_update"):
         return "end"
 
-    test_results = state["current_update"].get("test_results", {})
+    test_results = state["current_update"].get("test_results") or {}
 
     if test_results.get("success"):
         return "reflect"
