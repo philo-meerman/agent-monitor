@@ -6,12 +6,18 @@ on:
   repository_dispatch:
     types: [vulnerability-detected]
   workflow_dispatch:
+    inputs:
+      debug:
+        description: "Run with debugging output"
+        required: false
+        default: "false"
 
 jobs:
   upgrade:
     name: Run Upgrade Agent
     runs-on: self-hosted
     timeout-minutes: 30
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event_name == 'dependabot_alert'
 
     steps:
       - name: Checkout code
