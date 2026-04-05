@@ -46,8 +46,8 @@ jobs:
         env:
           PATH: /opt/homebrew/bin:/usr/local/bin:$PATH
         run: |
-          /opt/homebrew/bin/python3 -m pip install --break-system-packages -r requirements.txt
-          /opt/homebrew/bin/python3 -m pip install --break-system-packages -r requirements-dev.txt
+          /opt/homebrew/bin/python3.12 -m pip install --break-system-packages -r requirements.txt
+          /opt/homebrew/bin/python3.12 -m pip install --break-system-packages -r requirements-dev.txt
 
       - name: Run upgrade agent
         env:
@@ -61,7 +61,7 @@ jobs:
           PATH: /opt/homebrew/bin:/usr/local/bin:$PATH
           TRIGGER_TYPE: ${{ (github.event_name == 'schedule') && 'scheduled' || 'manual' }}
         run: |
-          /opt/homebrew/bin/python3 run-upgrade-agent.py
+          /opt/homebrew/bin/python3.12 run-upgrade-agent.py
 
       - name: Report status
         if: always()
