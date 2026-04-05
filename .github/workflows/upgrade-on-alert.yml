@@ -52,6 +52,7 @@ jobs:
       - name: Run upgrade agent
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           LANGFUSE_HOST: ${{ secrets.LANGFUSE_HOST }}
