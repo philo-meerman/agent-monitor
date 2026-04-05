@@ -36,7 +36,6 @@ from upgrade_agent.state import (
     AvailableUpdate,
     Dependency,
     TraceEvent,
-    Update,
     UpdateAttempt,
     UpdateStatus,
     UpdateType,
@@ -287,9 +286,9 @@ def decide(state: AgentState) -> AgentState:
     # Get first update to reason about
     update = state["available_updates"][0]
     if hasattr(update, "model_dump"):
-        update = Update(**update.model_dump())
+        update = AvailableUpdate(**update.model_dump())
     elif isinstance(update, dict):
-        update = Update(**update)
+        update = AvailableUpdate(**update)
 
     prompt = build_reasoning_prompt(
         name=update.dependency.name,
@@ -345,9 +344,9 @@ def plan(state: AgentState) -> AgentState:
 
     update = state["available_updates"][0]
     if hasattr(update, "model_dump"):
-        update = Update(**update.model_dump())
+        update = AvailableUpdate(**update.model_dump())
     elif isinstance(update, dict):
-        update = Update(**update)
+        update = AvailableUpdate(**update)
 
     # Get previous upgrades
     prev_json = read_memory.invoke("upgrades")
