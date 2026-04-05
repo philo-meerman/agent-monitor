@@ -1,0 +1,15 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Runner
+    runs-on: self-hosted
+    steps:
+      - name: Run test commands
+        run: |
+          echo "Runner works!"
+          echo "Current directory"
+          echo "Python location"

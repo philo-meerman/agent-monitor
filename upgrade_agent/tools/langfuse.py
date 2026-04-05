@@ -63,7 +63,7 @@ def create_otel_trace(project_id: str, trace_name: str, metadata: dict) -> str:
     import uuid
 
     trace_id = str(uuid.uuid4())
-    timestamp = datetime.utcnow().isoformat() + "Z"
+    _timestamp = datetime.utcnow().isoformat() + "Z"
 
     # Build OTLP trace payload
     trace_payload = {
@@ -112,9 +112,9 @@ def create_otel_trace(project_id: str, trace_name: str, metadata: dict) -> str:
     url = f"{LANGFUSE_HOST}/api/public/otel/v1/traces"
 
     try:
-        resp = session.post(url, json=trace_payload, timeout=10)
-        if resp.status_code >= 400:
-            return f"error: {resp.status_code} - {resp.text}"
+        _resp = session.post(url, json=trace_payload, timeout=10)
+        if _resp.status_code >= 400:
+            return f"error: {_resp.status_code} - {_resp.text}"
         return trace_id
     except Exception as e:
         return f"error: {e!s}"
@@ -144,8 +144,8 @@ def create_otel_span(
     import uuid
 
     project_id = project_id or get_langfuse_project_id()
-    timestamp = datetime.utcnow().isoformat() + "Z"
-    span_id = str(uuid.uuid4())[:16]
+    _timestamp = datetime.utcnow().isoformat() + "Z"
+    _span_id = str(uuid.uuid4())[:16]
 
     # Build attributes
     attributes = []
@@ -185,7 +185,7 @@ def create_otel_span(
                         "spans": [
                             {
                                 "traceId": trace_id,
-                                "spanId": span_id,
+                                "spanId": _span_id,
                                 "parentSpanId": "",  # Root span
                                 "name": span_name,
                                 "startTimeUnixNano": int(
@@ -209,10 +209,10 @@ def create_otel_span(
     url = f"{LANGFUSE_HOST}/api/public/otel/v1/traces"
 
     try:
-        resp = session.post(url, json=span_payload, timeout=10)
-        if resp.status_code >= 400:
-            return f"error: {resp.status_code} - {resp.text}"
-        return span_id
+        _resp = session.post(url, json=span_payload, timeout=10)
+        if _resp.status_code >= 400:
+            return f"error: {_resp.status_code} - {_resp.text}"
+        return _span_id
     except Exception as e:
         return f"error: {e!s}"
 
@@ -298,7 +298,7 @@ def log_span(
             return json.dumps({"success": False, "error": "No active trace"})
 
         project_id = get_langfuse_project_id()
-        span_id = create_otel_span(
+        _span_id = create_otel_span(
             trace_id=trace_id,
             span_name=name,
             input_data=input_data or {},
@@ -310,7 +310,7 @@ def log_span(
         return json.dumps(
             {
                 "success": True,
-                "span_id": span_id,
+                "span_id": _span_id,
                 "span_name": name,
             }
         )
@@ -346,7 +346,7 @@ def log_generation(
         import uuid
 
         trace_id = get_active_trace_id() or str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat() + "Z"
+        _timestamp = datetime.utcnow().isoformat() + "Z"
 
         generation_payload = {
             "resourceSpans": [
@@ -409,7 +409,7 @@ def log_generation(
 
         session = get_session()
         url = f"{LANGFUSE_HOST}/api/public/otel/v1/traces"
-        resp = session.post(url, json=generation_payload, timeout=10)
+        _resp = session.post(url, json=generation_payload, timeout=10)
 
         return json.dumps(
             {
@@ -462,7 +462,7 @@ def log_event(
         set_active_trace_id(trace_id)
 
         # Create event span
-        span_id = create_otel_span(
+        _span_id = create_otel_span(
             trace_id=trace_id,
             span_name=node,
             input_data={"event": event_type},
@@ -532,7 +532,7 @@ def log_upgrade_result(
         set_active_trace_id(trace_id)
 
         # Create result span
-        span_id = create_otel_span(
+        _span_id = create_otel_span(
             trace_id=trace_id,
             span_name="upgrade-result",
             input_data={
@@ -613,7 +613,7 @@ def log_test_results(
         set_active_trace_id(trace_id)
 
         # Create span with detailed test output
-        span_id = create_otel_span(
+        _span_id = create_otel_span(
             trace_id=trace_id,
             span_name="test-execution",
             input_data={

@@ -187,7 +187,7 @@ def check_dockerhub_version(image: str) -> str:
 
 
 @tool
-def check_dockerhub_versioned(image: str, version_prefix: str = None) -> str:
+def check_dockerhub_versioned(image: str, version_prefix: str | None = None) -> str:
     """Check the latest versioned tag for a Docker image on Docker Hub.
 
     Unlike check_dockerhub_version, this returns the latest semantic version

@@ -872,9 +872,6 @@ def _verify_python_upgrade(state: dict, dep: dict) -> dict:
 
 def _verify_docker_upgrade(state: dict, dep: dict) -> dict:
     """Verify Docker image upgrade."""
-    file_path = dep.get("file_path", "")
-    image_name = dep.get("name", "")
-
     # Check restart result from act
     restart_result = state["current_update"].get("restart_result", {})
 
