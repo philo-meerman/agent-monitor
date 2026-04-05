@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   repository_dispatch:
     types: [vulnerability-detected]
+  dependabot_alert:
+    types: [created]
 
 jobs:
   upgrade:
