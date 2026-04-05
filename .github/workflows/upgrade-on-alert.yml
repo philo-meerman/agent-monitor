@@ -42,13 +42,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create runner user directory
+        run: sudo mkdir -p /Users/runner && sudo chown $USER /Users/runner
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Create runner user directory
-        run: sudo mkdir -p /Users/runner && sudo chown $USER /Users/runner
+          setup-python-cache: 'none'
 
       - name: Install dependencies
         run: |
