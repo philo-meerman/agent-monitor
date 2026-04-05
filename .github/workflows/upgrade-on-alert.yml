@@ -43,13 +43,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create runner user directory
-        run: sudo mkdir -p /Users/runner && sudo chown $USER /Users/runner
+        run: sudo mkdir -p /Users/runner && sudo chown runner /Users/runner || sudo mkdir -p /Users/runner
 
       - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          setup-python-cache: 'none'
+        run: |
+          echo "Using system Python"
+          python3 --version
 
       - name: Install dependencies
         run: |
