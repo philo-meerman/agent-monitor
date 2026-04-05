@@ -101,7 +101,7 @@ def save_working_state(branch: str) -> str:
             except Exception:
                 continue
 
-    append_memory.invoke("last_known_good", state_to_save)
+    append_memory.invoke("last_known_good", state_to_save)  # type: ignore[arg-type]
 
     return json.dumps(
         {

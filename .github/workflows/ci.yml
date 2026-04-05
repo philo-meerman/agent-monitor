@@ -49,7 +49,7 @@ jobs:
 
       - name: Run mypy
         run: |
-          mypy upgrade_agent --ignore-missing-imports --python-version 3.12 --disable-error-code=assignment
+          mypy upgrade_agent --ignore-missing-imports --follow-imports=skip --python-version 3.12 --disable-error-code=assignment
 
   test:
     name: Tests

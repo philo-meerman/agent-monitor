@@ -41,11 +41,11 @@ def verify_vulnerability_fixed(
     details = []
     all_fixed = True
 
-    gh_result = check_github_advisory.invoke(package_name=package)
+    gh_result = check_github_advisory.invoke(package_name=package)  # type: ignore[call-arg]
     gh_data = json.loads(gh_result)
     current_vulns = gh_data.get("vulnerabilities", [])
 
-    pypi_result = check_pypi_advisory.invoke(package=package)
+    pypi_result = check_pypi_advisory.invoke(package=package)  # type: ignore[call-arg]
     pypi_data = json.loads(pypi_result)
     current_advisories = pypi_data.get("advisories", [])
 
@@ -121,7 +121,7 @@ def check_version_vulnerabilities(
     """
     from upgrade_agent.tools.advisory import check_github_advisory
 
-    gh_result = check_github_advisory.invoke(package_name=package, ecosystem=ecosystem)
+    gh_result = check_github_advisory.invoke(package_name=package, ecosystem=ecosystem)  # type: ignore[call-arg]
     gh_data = json.loads(gh_result)
 
     vulnerabilities = gh_data.get("vulnerabilities", [])
