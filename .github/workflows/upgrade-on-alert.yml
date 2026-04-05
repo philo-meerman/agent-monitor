@@ -12,12 +12,17 @@ on:
         - manual
         - vulnerability_detected
         - dependabot
+  repository_dispatch:
+    types: [vulnerability-detected]
+  dependabot_alert:
+    types: [created]
 
 jobs:
   upgrade:
     name: Run Upgrade Agent
     runs-on: self-hosted
     timeout-minutes: 30
+    if: github.event_name != 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
