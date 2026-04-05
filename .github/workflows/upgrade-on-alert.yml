@@ -44,8 +44,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          python3 -m pip install -r requirements.txt
+          python3 -m pip install -r requirements-dev.txt
 
       - name: Run upgrade agent
         env:
@@ -57,7 +57,7 @@ jobs:
           LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
           TRIGGER_TYPE: ${{ (github.event_name == 'schedule') && 'scheduled' || 'manual' }}
         run: |
-          python run-upgrade-agent.py
+          python3 run-upgrade-agent.py
 
       - name: Report status
         if: always()
