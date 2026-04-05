@@ -1,6 +1,10 @@
 name: Upgrade Agent - On Vulnerability Alert
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   dependabot_alert:
     types: [created]
   repository_dispatch:
@@ -17,7 +21,11 @@ jobs:
     name: Run Upgrade Agent
     runs-on: self-hosted
     timeout-minutes: 30
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event_name == 'dependabot_alert'
+    if: >
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      github.event_name == 'repository_dispatch' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'dependabot_alert'
 
     steps:
       - name: Checkout code
