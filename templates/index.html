@@ -788,6 +788,181 @@
         }
 
         /* ========================================
+           UPGRADE AGENT SECTION
+           ======================================== */
+        .upgrade-agent-card {
+            position: relative;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+            overflow: hidden;
+            animation: cardFadeIn 0.5s ease-out backwards;
+            animation-delay: 200ms;
+        }
+
+        .upgrade-agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+        }
+
+        .upgrade-agent-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        .upgrade-agent-title {
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin: 0;
+        }
+
+        .upgrade-agent-title i {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .upgrade-agent-meta {
+            margin-left: auto;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .upgrade-agent-meta i {
+            color: var(--accent-blue);
+            opacity: 0.7;
+        }
+
+        .upgrade-agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .upgrade-stat {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            text-align: center;
+        }
+
+        .upgrade-stat-value {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .upgrade-stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .upgrade-stat-value.stat-success { color: var(--success); }
+        .upgrade-stat-value.stat-error   { color: var(--error); }
+        .upgrade-stat-value.stat-warning { color: var(--warning); }
+
+        .upgrade-packages {
+            margin-bottom: var(--space-md);
+        }
+
+        .upgrade-packages-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .package-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .package-tag {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            background: rgba(139, 92, 246, 0.12);
+            color: var(--accent-purple);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: var(--radius-full);
+            padding: 0.15rem 0.6rem;
+        }
+
+        .upgrade-prs {
+            border-top: 1px solid var(--glass-border);
+            padding-top: var(--space-md);
+        }
+
+        .upgrade-prs-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .pr-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .pr-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+
+        .pr-link:hover { color: var(--accent-blue); }
+
+        .upgrade-agent-empty {
+            text-align: center;
+            padding: var(--space-xl);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .upgrade-agent-empty i {
+            display: block;
+            font-size: 2.5rem;
+            margin-bottom: var(--space-sm);
+            opacity: 0.4;
+        }
+
+        /* ========================================
            SCREEN READER ONLY
            ======================================== */
         .sr-only {
@@ -878,6 +1053,20 @@
                 <i class="bi bi-arrow-clockwise"></i>
                 Refresh Now
             </button>
+        </div>
+
+        <!-- Upgrade Agent Section -->
+        <div class="section-header" style="margin-top: 1.5rem;">
+            <h2 class="section-title">Upgrade Agent</h2>
+            <div class="section-line"></div>
+        </div>
+        <div id="upgrade-agent-container" aria-live="polite">
+            <div class="upgrade-agent-card">
+                <div class="upgrade-agent-empty">
+                    <i class="bi bi-arrow-repeat"></i>
+                    Loading upgrade agent data…
+                </div>
+            </div>
         </div>
     </main>
 
@@ -1272,6 +1461,128 @@
                 clearInterval(refreshInterval);
             }
         });
+
+        /* ========================================
+           UPGRADE AGENT
+           ======================================== */
+        function renderUpgradeAgent(data) {
+            const container = document.getElementById('upgrade-agent-container');
+            if (!container) return;
+
+            if (!data || data.status === 'never') {
+                container.innerHTML = `
+                    <div class="upgrade-agent-card">
+                        <div class="upgrade-agent-empty">
+                            <i class="bi bi-robot"></i>
+                            No upgrade agent runs recorded yet. Runs will appear here after the agent executes.
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            const statusClass = data.status === 'success' ? 'status-success'
+                : data.status === 'failed' ? 'status-error'
+                : 'status-running';
+            const statusIcon = data.status === 'success' ? 'bi-check-circle-fill'
+                : data.status === 'failed' ? 'bi-x-circle-fill'
+                : 'bi-circle-fill';
+
+            const lastRunText = data.last_run
+                ? new Date(data.last_run).toLocaleString()
+                : 'Unknown';
+
+            const packageTagsHtml = data.packages_checked && data.packages_checked.length
+                ? data.packages_checked.map(p => `<span class="package-tag">${p}</span>`).join('')
+                : '<span style="color: var(--text-muted); font-size: 0.8rem;">None recorded</span>';
+
+            const prsHtml = data.prs_opened && data.prs_opened.length
+                ? data.prs_opened.map(url => {
+                    const label = url.replace(/https?:\/\/github\.com\//, '').replace(/\/pull\//, '#');
+                    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="pr-link">
+                        <i class="bi bi-git"></i>${label}
+                        <i class="bi bi-box-arrow-up-right" style="font-size:0.6rem;"></i>
+                    </a>`;
+                }).join('')
+                : '<span style="color: var(--text-muted); font-size: 0.8rem;">No PRs opened</span>';
+
+            container.innerHTML = `
+                <div class="upgrade-agent-card">
+                    <div class="upgrade-agent-header">
+                        <h3 class="upgrade-agent-title">
+                            <i class="bi bi-arrow-repeat"></i>
+                            Dependency Upgrade Agent
+                        </h3>
+                        <span class="status-badge ${statusClass}" style="margin-left: auto;">
+                            <i class="bi ${statusIcon}" aria-hidden="true"></i>
+                            ${data.status}
+                        </span>
+                        <span class="upgrade-agent-meta">
+                            <i class="bi bi-clock"></i>
+                            Last run: ${lastRunText}
+                        </span>
+                    </div>
+
+                    <div class="upgrade-agent-grid">
+                        <div class="upgrade-stat">
+                            <div class="upgrade-stat-value">${data.upgrades_attempted}</div>
+                            <div class="upgrade-stat-label">Attempted</div>
+                        </div>
+                        <div class="upgrade-stat">
+                            <div class="upgrade-stat-value stat-success">${data.upgrades_successful}</div>
+                            <div class="upgrade-stat-label">Successful</div>
+                        </div>
+                        <div class="upgrade-stat">
+                            <div class="upgrade-stat-value stat-error">${data.upgrades_failed}</div>
+                            <div class="upgrade-stat-label">Failed</div>
+                        </div>
+                        <div class="upgrade-stat">
+                            <div class="upgrade-stat-value stat-warning">${data.upgrades_needs_review}</div>
+                            <div class="upgrade-stat-label">Needs Review</div>
+                        </div>
+                        <div class="upgrade-stat">
+                            <div class="upgrade-stat-value">${data.prs_opened ? data.prs_opened.length : 0}</div>
+                            <div class="upgrade-stat-label">PRs Opened</div>
+                        </div>
+                    </div>
+
+                    <div class="upgrade-packages">
+                        <div class="upgrade-packages-label">Packages checked</div>
+                        <div class="package-tags">${packageTagsHtml}</div>
+                    </div>
+
+                    <div class="upgrade-prs">
+                        <div class="upgrade-prs-label">Pull Requests</div>
+                        <div class="pr-links">${prsHtml}</div>
+                    </div>
+                </div>`;
+        }
+
+        async function fetchUpgradeAgent() {
+            try {
+                const response = await fetch('/api/upgrade-agent');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                renderUpgradeAgent(data);
+            } catch (error) {
+                console.error('Failed to fetch upgrade agent data:', error);
+                const container = document.getElementById('upgrade-agent-container');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="upgrade-agent-card">
+                            <div class="upgrade-agent-empty">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Could not load upgrade agent data.
+                            </div>
+                        </div>`;
+                }
+            }
+        }
+
+        // Kick off upgrade agent fetch alongside the main agents fetch
+        const _origInit = init;
+        document.addEventListener('DOMContentLoaded', fetchUpgradeAgent);
+        if (document.readyState !== 'loading') fetchUpgradeAgent();
+        setInterval(fetchUpgradeAgent, 30000);
     </script>
 </body>
 </html>
