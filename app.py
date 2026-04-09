@@ -1,12 +1,80 @@
+import json
 import os
 import re
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
 LOG_FILE = os.path.expanduser("~/.brew-maintenance.log")
+MEMORY_DIR = Path(__file__).parent / "memory"
+
+
+def read_memory_file(key: str):
+    """Read a JSON memory file written by the upgrade agent. Returns None if absent."""
+    path = MEMORY_DIR / f"{key}.json"
+    if not path.exists():
+        return None
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def get_upgrade_agent_data() -> dict:
+    """
+    Read the upgrade agent's memory files and return a summary suitable for the
+    dashboard: last run time, packages checked, upgrade counts, and PR links.
+    """
+    upgrades = read_memory_file("upgrades") or []
+    metrics = read_memory_file("metrics") or {}
+
+    # Normalise: upgrades.json is a list (append_memory), decisions.json is a dict
+    if not isinstance(upgrades, list):
+        upgrades = []
+
+    # --- Last run ---
+    last_run = None
+    last_status = "never"
+    if upgrades:
+        latest = max(upgrades, key=lambda u: u.get("timestamp", ""), default=None)
+        if latest:
+            last_run = latest.get("timestamp")
+            last_status = "success" if latest.get("success") else "failed"
+
+    # --- Packages checked (unique package names across all upgrade attempts) ---
+    packages_checked = list(
+        dict.fromkeys(
+            u.get("package") or u.get("name") or u.get("dependency", "")
+            for u in upgrades
+            if u.get("package") or u.get("name") or u.get("dependency")
+        )
+    )
+
+    # --- Upgrade counts ---
+    total = metrics.get("total_upgrades", len(upgrades))
+    successful = metrics.get("successful", sum(1 for u in upgrades if u.get("success")))
+    failed = metrics.get(
+        "failed", sum(1 for u in upgrades if not u.get("success") and u)
+    )
+    needs_review = metrics.get("needs_review", 0)
+
+    # --- PRs opened ---
+    prs_opened = [u["pr_url"] for u in upgrades if u.get("pr_url")]
+
+    return {
+        "last_run": last_run,
+        "status": last_status,
+        "packages_checked": packages_checked,
+        "upgrades_attempted": total,
+        "upgrades_successful": successful,
+        "upgrades_failed": failed,
+        "upgrades_needs_review": needs_review,
+        "prs_opened": prs_opened,
+    }
 
 
 def detect_log_level(line):
@@ -939,6 +1007,12 @@ def get_logs():
         log_entries.sort(key=lambda x: x["timestamp"], reverse=True)
 
         return jsonify(log_entries)
+
+
+@app.route("/api/upgrade-agent")
+def get_upgrade_agent():
+    """Return upgrade agent run summary read from the memory/ directory."""
+    return jsonify(get_upgrade_agent_data())
 
 
 if __name__ == "__main__":
